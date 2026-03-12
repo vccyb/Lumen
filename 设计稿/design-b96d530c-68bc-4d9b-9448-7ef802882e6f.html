@@ -1,0 +1,524 @@
+<html lang="en" vid="0"><head vid="1">
+    <meta charset="UTF-8" vid="2">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" vid="3">
+    <title vid="4">Reflection — Life Ledger</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" vid="5">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" vid="6">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&amp;display=swap" rel="stylesheet" vid="7">
+    
+    <style vid="8">
+        :root {
+            
+            --bg-base: #F4F4F6;
+            --bg-surface: #FFFFFF;
+            --text-primary: #111111;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --border-subtle: #EAEAEA;
+            --border-focus: #CCCCCC;
+            --accent-gold: #F0A07A; 
+            
+            --glow-color: rgba(245, 165, 120, 0.25); 
+            
+            --font-serif: 'Inter', sans-serif; 
+            --font-sans: 'Inter', sans-serif;
+            
+            --spacing-xs: 4px;
+            --spacing-sm: 12px;
+            --spacing-md: 24px;
+            --spacing-lg: 48px;
+            --spacing-xl: 96px;
+            --spacing-xxl: 160px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        h1, h2, h3, .serif-display {
+            font-family: var(--font-sans);
+            font-weight: 600;
+            letter-spacing: -0.03em;
+        }
+
+        .label {
+            font-family: var(--font-sans);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--text-tertiary);
+            font-weight: 600;
+        }
+
+        .value {
+            font-family: var(--font-sans);
+            font-size: 20px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .text-body {
+            font-family: var(--font-sans);
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            font-weight: 400;
+        }
+
+        .sparkle {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            color: var(--text-primary);
+            vertical-align: middle;
+            transform: translateY(-2px);
+        }
+
+        aside {
+            width: 280px;
+            border-right: 1px solid var(--border-subtle);
+            padding: var(--spacing-lg) var(--spacing-md);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: transparent;
+            z-index: 10;
+        }
+
+        main {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            position: relative;
+        }
+
+        main::-webkit-scrollbar {
+            width: 6px;
+        }
+        main::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        main::-webkit-scrollbar-thumb {
+            background: var(--border-subtle);
+            border-radius: 10px;
+        }
+
+        .brand {
+            font-family: var(--font-sans);
+            font-weight: 600;
+            font-size: 28px;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            letter-spacing: -0.04em;
+        }
+        
+        .brand .sparkle-container {
+            position: relative;
+            display: inline-flex;
+        }
+        
+        .brand .sparkle-container .sparkle {
+            position: absolute;
+            top: -2px;
+            right: -6px;
+            width: 10px;
+            height: 10px;
+        }
+
+        nav {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-xl);
+        }
+
+        nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 8px 0;
+            transition: color 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+        }
+
+        nav a:hover, nav a.active {
+            color: var(--text-primary);
+        }
+
+        nav a.active::before {
+            content: '';
+            display: block;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: var(--text-primary);
+        }
+
+        .global-metrics {
+            margin-top: auto;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: var(--spacing-md);
+        }
+
+        .metric-group {
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .metric-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .hero {
+            padding: var(--spacing-xl) 80px var(--spacing-xl) 80px;
+            max-width: 1100px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: 64px;
+            line-height: 1.1;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+            max-width: 800px;
+        }
+
+        .hero h1 i {
+            color: var(--text-secondary);
+            font-style: italic;
+            font-weight: 400;
+        }
+
+        .hero-desc {
+            font-family: var(--font-sans);
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 480px;
+            line-height: 1.6;
+        }
+
+        .ledger-container {
+            position: relative;
+            padding-bottom: var(--spacing-xxl);
+            padding-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 60px;
+        }
+
+        .chapter {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            padding: 60px 80px;
+            max-width: 1100px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            
+            
+            background: var(--bg-surface);
+            border-radius: 20px;
+            box-shadow: 0 0 80px 15px var(--glow-color);
+        }
+
+        .chapter:nth-child(even) .chapter-visual {
+            order: 2;
+        }
+        .chapter:nth-child(even) .chapter-content {
+            order: 1;
+            align-items: flex-end;
+            text-align: right;
+        }
+        .chapter:nth-child(even) .meta-grid {
+            text-align: right;
+        }
+
+        .chapter-visual {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3/4;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        .chapter-visual img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+
+        .chapter:hover .chapter-visual img {
+            transform: scale(1.03);
+        }
+
+        .visual-frame {
+            display: none;
+        }
+
+        .date-badge {
+            position: absolute;
+            top: var(--spacing-md);
+            right: var(--spacing-md);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 14px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            z-index: 3;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .chapter-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 400px;
+        }
+
+        .chapter-num {
+            font-family: var(--font-sans);
+            color: var(--text-tertiary);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .chapter-title {
+            font-size: 42px;
+            line-height: 1.1;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+        }
+
+        .chapter-reflection {
+            font-family: var(--font-sans);
+            font-size: 16px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: var(--spacing-lg);
+            font-style: normal;
+        }
+
+        .meta-grid {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            width: 100%;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: var(--spacing-md);
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: var(--spacing-md);
+        }
+
+        .chapter:nth-child(even) .meta-row {
+            flex-direction: row-reverse;
+        }
+
+        .meta-row .label {
+            flex-shrink: 0;
+        }
+
+        .meta-row .value {
+            font-size: 16px;
+        }
+        
+        .meta-row .value.highlight {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border-subtle);
+            width: 40px;
+            margin: var(--spacing-md) 0;
+        }
+        
+        .chapter:nth-child(even) .divider {
+            margin-left: auto;
+        }
+
+    </style>
+</head>
+<body vid="9">
+
+    <aside vid="10">
+        <div vid="11">
+            <a href="#" class="brand" vid="12">
+                refl<span class="sparkle-container" vid="13">e<svg class="sparkle" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" vid="14"><path d="M12 0L13.5 10.5L24 12L13.5 13.5L12 24L10.5 13.5L0 12L10.5 10.5L12 0Z" fill="currentColor" vid="15"></path></svg></span>ction
+            </a>
+            
+            <nav vid="16">
+                <a href="#" class="active" vid="17">The Ledger</a>
+                <a href="#" vid="18">Asset Inventory</a>
+                <a href="#" vid="19">Future Allocations</a>
+                <a href="#" vid="20">Manifesto</a>
+            </nav>
+        </div>
+
+        <div class="global-metrics" vid="21">
+            <div class="metric-group" vid="22">
+                <div class="label" vid="23">Total Capital Deployed</div>
+                <div class="value" vid="24">$428,500</div>
+            </div>
+            <div class="metric-group" vid="25">
+                <div class="label" vid="26">Primary Yield</div>
+                <div class="value" style="font-size: 16px; font-style: italic; color: var(--text-secondary);" vid="27">Experiences &amp; Foundation</div>
+            </div>
+            <div class="metric-group" vid="28">
+                <div class="label" vid="29">Archive Span</div>
+                <div class="value" style="font-size: 14px; font-family: var(--font-sans);" vid="30">2018 — PRESENT</div>
+            </div>
+        </div>
+    </aside>
+
+    <main vid="31">
+        <section class="hero" vid="32">
+            <div class="label" style="margin-bottom: var(--spacing-md);" vid="33">Personal Wealth Archive</div>
+            <h1 vid="34">A ledger of capital traded for <i vid="35">meaning</i>.</h1>
+            <p class="hero-desc" vid="36">We track expenses to manage the present, but we track investments to understand the future. This archive records the major allocations of capital that shaped a life—where money was exchanged for foundations, memories, and growth.</p>
+        </section>
+
+        <section class="ledger-container" vid="37">
+            
+            <article class="chapter" vid="38">
+                <div class="chapter-content" vid="39">
+                    <div class="chapter-num" vid="40">01.</div>
+                    <h2 class="chapter-title" vid="41">The First Haven</h2>
+                    <p class="chapter-reflection" vid="42">"A structure of wood and stone, but practically, an acquisition of permanence. The first time capital felt heavy, tethering me to a specific longitude and latitude."</p>
+                    
+                    <div class="divider" vid="43"></div>
+
+                    <div class="meta-grid" vid="44">
+                        <div class="meta-row" vid="45">
+                            <span class="label" vid="46">Capital Allocated</span>
+                            <span class="value" vid="47">$125,000 <span style="font-size: 12px; color: var(--text-tertiary); font-family: var(--font-sans);" vid="48">DOWN</span></span>
+                        </div>
+                        <div class="meta-row" vid="49">
+                            <span class="label" vid="50">Asset Class</span>
+                            <span class="value" style="font-size: 14px; font-family: var(--font-sans);" vid="51">TANGIBLE / SHELTER</span>
+                        </div>
+                        <div class="meta-row" vid="52">
+                            <span class="label" vid="53">Emotional Yield</span>
+                            <span class="value highlight" vid="54">Stability, Canvas for Life</span>
+                        </div>
+                        <div class="meta-row" vid="55">
+                            <span class="label" vid="56">Location</span>
+                            <span class="value" style="font-size: 14px; font-family: var(--font-sans); color: var(--text-secondary);" vid="57">45°31'12"N 122°40'55"W</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chapter-visual" vid="58">
+                    <div class="visual-frame" vid="59"></div>
+                    <div class="date-badge label" vid="60">OCT 2018</div>
+                    <img src="https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&amp;w=1469&amp;auto=format&amp;fit=crop" alt="Moody interior of a home with soft light" vid="61">
+                </div>
+            </article>
+
+            <article class="chapter" vid="62">
+                <div class="chapter-content" vid="63">
+                    <div class="chapter-num" vid="64">02.</div>
+                    <h2 class="chapter-title" vid="65">The Atlas Sabbatical</h2>
+                    <p class="chapter-reflection" vid="66">"A conscious pause. The capital traded for time in the Patagonian highlands yielded returns that compound daily in clarity. The bank ledger showed a deficit; the soul recorded a massive acquisition."</p>
+                    
+                    <div class="divider" vid="67"></div>
+
+                    <div class="meta-grid" vid="68">
+                        <div class="meta-row" vid="69">
+                            <span class="label" vid="70">Capital Allocated</span>
+                            <span class="value" vid="71">$18,400</span>
+                        </div>
+                        <div class="meta-row" vid="72">
+                            <span class="label" vid="73">Asset Class</span>
+                            <span class="value" style="font-size: 14px; font-family: var(--font-sans);" vid="74">INTANGIBLE / EXPERIENTIAL</span>
+                        </div>
+                        <div class="meta-row" vid="75">
+                            <span class="label" vid="76">Emotional Yield</span>
+                            <span class="value highlight" vid="77">Perspective, Exhaustion, Awe</span>
+                        </div>
+                        <div class="meta-row" vid="78">
+                            <span class="label" vid="79">Duration</span>
+                            <span class="value" style="font-size: 14px; font-family: var(--font-sans); color: var(--text-secondary);" vid="80">90 DAYS</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chapter-visual" vid="81">
+                    <div class="visual-frame" vid="82"></div>
+                    <div class="date-badge label" vid="83">SEP 2021</div>
+                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&amp;w=1470&amp;auto=format&amp;fit=crop" alt="Dark, moody mountain range" vid="84">
+                </div>
+            </article>
+
+            <article class="chapter" vid="85">
+                <div class="chapter-content" vid="86">
+                    <div class="chapter-num" vid="87">03.</div>
+                    <h2 class="chapter-title" vid="88">Seed Capital: Studio</h2>
+                    <p class="chapter-reflection" vid="89">"Betting against the comfort of a salary. Buying back my own hours. The equipment depreciates, but the agency acquired is an appreciating asset."</p>
+                    
+                    <div class="divider" vid="90"></div>
+
+                    <div class="meta-grid" vid="91">
+                        <div class="meta-row" vid="92">
+                            <span class="label" vid="93">Capital Allocated</span>
+                            <span class="value" vid="94">$45,000</span>
+                        </div>
+                        <div class="meta-row" vid="95">
+                            <span class="label" vid="96">Asset Class</span>
+                            <span class="value" style="font-size: 14px; font-family: var(--font-sans);" vid="97">VENTURE / AUTONOMY</span>
+                        </div>
+                        <div class="meta-row" vid="98">
+                            <span class="label" vid="99">Emotional Yield</span>
+                            <span class="value highlight" vid="100">Anxiety, Purpose, Sovereignty</span>
+                        </div>
+                        <div class="meta-row" vid="101">
+                            <span class="label" vid="102">Status</span>
+                            <span class="value" style="font-size: 14px; font-family: var(--font-sans); color: var(--text-secondary);" vid="103">COMPOUNDING</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chapter-visual" vid="104">
+                    <div class="visual-frame" vid="105"></div>
+                    <div class="date-badge label" vid="106">MAR 2023</div>
+                    <img src="https://images.unsplash.com/photo-1497215842964-222b430dc094?q=80&amp;w=1470&amp;auto=format&amp;fit=crop" alt="Minimalist moody desk setup" vid="107">
+                </div>
+            </article>
+
+        </section>
+    </main>
+
+
+</body></html>

@@ -1,0 +1,726 @@
+<html lang="en" vid="0"><head vid="1">
+    <meta charset="UTF-8" vid="2">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" vid="3">
+    <title vid="4">Epoch - Life &amp; Wealth Narrative</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com" vid="5">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" vid="6">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" vid="7">
+    <style vid="8">
+        :root {
+            
+            --c-blue: #007AFF;
+            --c-gray-inactive: #8E8E93;
+            --c-bg-system: #F2F2F7;
+            --c-surface: #FFFFFF;
+            --c-text-main: #000000;
+            --c-text-sub: rgba(60, 60, 67, 0.6);
+            --c-text-muted: rgba(60, 60, 67, 0.3);
+            --c-border: #E5E5EA;
+            
+            
+            --grad-warm: linear-gradient(135deg, #E28B6B 0%, #D5546C 100%);
+            
+            
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            
+            
+            --sp-1: 4px;
+            --sp-2: 8px;
+            --sp-3: 12px;
+            --sp-4: 16px;
+            --sp-6: 24px;
+            --sp-8: 32px;
+            --sp-12: 48px;
+
+            
+            --rad-sm: 8px;
+            --rad-md: 12px;
+            --rad-lg: 16px;
+            --rad-full: 9999px;
+            
+            
+            --shadow-subtle: 0 4px 24px rgba(0, 0, 0, 0.04);
+            --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--c-bg-system);
+            color: var(--c-text-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            position: relative;
+        }
+
+        
+        .ambient-glow {
+            position: absolute;
+            top: -20vh;
+            left: 20vw;
+            width: 80vw;
+            height: 80vh;
+            background: var(--grad-warm);
+            filter: blur(120px);
+            opacity: 0.15;
+            z-index: 0;
+            pointer-events: none;
+            border-radius: 50%;
+        }
+
+        
+        .app-container {
+            display: grid;
+            grid-template-columns: 260px 1fr 340px;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        
+        .sidebar {
+            background-color: var(--c-surface);
+            border-right: 1px solid var(--c-border);
+            display: flex;
+            flex-direction: column;
+            padding: var(--sp-6) var(--sp-4);
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: var(--sp-12);
+            padding-left: var(--sp-2);
+            display: flex;
+            align-items: center;
+            gap: var(--sp-2);
+        }
+
+        .logo-mark {
+            width: 24px;
+            height: 24px;
+            background: var(--grad-warm);
+            border-radius: 6px;
+        }
+
+        .nav-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-2);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: var(--sp-3);
+            padding: var(--sp-3) var(--sp-3);
+            border-radius: var(--rad-md);
+            color: var(--c-gray-inactive);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background-color: var(--c-bg-system);
+        }
+
+        .nav-item.active {
+            color: var(--c-blue);
+            background-color: rgba(0, 122, 255, 0.08);
+        }
+
+        .nav-icon {
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
+        }
+
+        .nav-label {
+            margin-top: 1px;
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+        }
+
+        
+        .main-content {
+            overflow-y: auto;
+            padding: var(--sp-12) var(--sp-12);
+            position: relative;
+        }
+
+        .main-header {
+            margin-bottom: var(--sp-12);
+        }
+
+        .header-title {
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: var(--sp-2);
+        }
+
+        .header-subtitle {
+            font-size: 17px;
+            color: var(--c-text-sub);
+            font-weight: 400;
+        }
+
+        
+        .timeline-container {
+            position: relative;
+            padding-left: 32px; 
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 11px; 
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: var(--c-border);
+            z-index: 1;
+        }
+
+        
+        .year-marker {
+            position: relative;
+            font-size: 20px;
+            font-weight: 600;
+            margin: var(--sp-8) 0 var(--sp-6) -32px;
+            padding-left: 32px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .year-marker::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            width: 10px;
+            height: 10px;
+            background-color: var(--c-surface);
+            border: 2px solid var(--c-text-muted);
+            border-radius: 50%;
+            z-index: 2;
+        }
+
+        
+        .milestone-node {
+            position: relative;
+            margin-bottom: var(--sp-8);
+            z-index: 2;
+        }
+
+        .milestone-dot {
+            position: absolute;
+            left: -32px;
+            top: 24px;
+            width: 24px;
+            height: 24px;
+            background-color: var(--c-surface);
+            border: 2px solid var(--c-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .milestone-dot.type-rational { border-color: var(--c-text-main); }
+        .milestone-dot.type-dream { border-color: #D5546C; }
+
+        .milestone-dot-inner {
+            width: 10px;
+            height: 10px;
+            background-color: var(--c-blue);
+            border-radius: 50%;
+        }
+        .type-rational .milestone-dot-inner { background-color: var(--c-text-main); }
+        .type-dream .milestone-dot-inner { background-color: #D5546C; }
+
+
+        .card {
+            background: var(--c-surface);
+            border-radius: var(--rad-lg);
+            padding: var(--sp-6);
+            box-shadow: var(--shadow-subtle);
+            border: 1px solid var(--c-border);
+            display: flex;
+            gap: var(--sp-6);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-elevated);
+        }
+
+        
+        .card-image-wrap {
+            flex-shrink: 0;
+            width: 120px;
+            height: 120px;
+            border-radius: var(--rad-md);
+            overflow: hidden;
+            background-color: var(--c-bg-system);
+            position: relative;
+        }
+
+        .card-image-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--sp-2);
+        }
+
+        .card-date {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--c-text-sub);
+        }
+
+        .card-badge {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 4px 8px;
+            border-radius: var(--rad-full);
+            background-color: var(--c-bg-system);
+            color: var(--c-text-sub);
+        }
+
+        .badge-dream { background-color: rgba(213, 84, 108, 0.1); color: #D5546C; }
+        .badge-rational { background-color: rgba(0, 0, 0, 0.05); color: var(--c-text-main); }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            margin-bottom: var(--sp-2);
+        }
+
+        .card-narrative {
+            font-size: 15px;
+            line-height: 1.5;
+            color: var(--c-text-sub);
+            margin-bottom: var(--sp-4);
+            max-width: 90%;
+        }
+
+        
+        .card-financials {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            gap: var(--sp-6);
+            padding-top: var(--sp-4);
+            border-top: 1px solid var(--c-border);
+        }
+
+        .fin-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .fin-label {
+            font-size: 12px;
+            color: var(--c-text-sub);
+            font-weight: 500;
+        }
+
+        .fin-value {
+            font-size: 17px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .val-negative { color: #FF3B30; } 
+        .val-positive { color: #34C759; } 
+        .val-neutral { color: var(--c-text-main); }
+
+        
+        .details-panel {
+            background-color: var(--c-surface);
+            border-left: 1px solid var(--c-border);
+            padding: var(--sp-8) var(--sp-6);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .panel-section {
+            margin-bottom: var(--sp-8);
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--c-text-sub);
+            margin-bottom: var(--sp-4);
+        }
+
+        
+        .hero-metric {
+            margin-bottom: var(--sp-6);
+        }
+        
+        .hero-metric .fin-label {
+            font-size: 15px;
+            margin-bottom: var(--sp-1);
+        }
+
+        .hero-metric .fin-value {
+            font-size: 40px;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+        }
+
+        
+        .data-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--sp-3) 0;
+            border-bottom: 1px solid var(--c-border);
+        }
+        .data-row:last-child { border-bottom: none; }
+
+        .row-label {
+            font-size: 15px;
+            color: var(--c-text-main);
+            display: flex;
+            align-items: center;
+            gap: var(--sp-2);
+        }
+
+        .row-color-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .row-value {
+            font-size: 15px;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+        }
+
+        
+        .mini-chart {
+            width: 100%;
+            height: 80px;
+            margin-bottom: var(--sp-4);
+            border-bottom: 1px solid var(--c-border);
+            position: relative;
+        }
+        
+        .chart-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+        
+        .chart-line {
+            fill: none;
+            stroke: var(--c-blue);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .chart-area {
+            fill: rgba(0, 122, 255, 0.1);
+        }
+
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0,0.2);
+        }
+
+    </style>
+</head>
+<body vid="9">
+
+    <div class="ambient-glow" vid="10"></div>
+
+    <div class="app-container" vid="11">
+        
+        
+        <nav class="sidebar" vid="12">
+            <div class="logo" vid="13">
+                <div class="logo-mark" vid="14"></div>
+                Epoch
+            </div>
+            
+            <ul class="nav-list" vid="15">
+                <li vid="16">
+                    <a href="#" class="nav-item" vid="17">
+                        <svg class="nav-icon" viewBox="0 0 24 24" vid="18">
+                            
+                            <path d="M4 13h6c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1zm0 8h6c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1zm10 0h6c.55 0 1-.45 1-1v-8c0-.55-.45-1-1-1h-6c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1zM13 4v4c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1h-6c-.55 0-1 .45-1 1z" vid="19"></path>
+                        </svg>
+                        <span class="nav-label" vid="20">Overview</span>
+                    </a>
+                </li>
+                <li vid="21">
+                    
+                    <a href="#" class="nav-item active" vid="22">
+                        <svg class="nav-icon" viewBox="0 0 24 24" vid="23">
+                            
+                            <path d="M23 12l-2.44-2.78.34-3.68-3.61-.82-1.89-3.18L12 3 8.6 1.54 6.71 4.72l-3.61.81.34 3.68L1 12l2.44 2.78-.34 3.69 3.61.82 1.89 3.18L12 21l3.4 1.46 1.89-3.18 3.61-.82-.34-3.68L23 12zm-10 5h-2v-2h2v2zm0-4h-2V7h2v6z" vid="24"></path>
+                        </svg>
+                        <span class="nav-label" vid="25">Life Narrative</span>
+                    </a>
+                </li>
+                <li vid="26">
+                    <a href="#" class="nav-item" vid="27">
+                        <svg class="nav-icon" viewBox="0 0 24 24" vid="28">
+                            
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.43.31 2.63 1.25 2.88 2.83h-1.98c-.15-.91-.96-1.43-2.27-1.43-1.65 0-2.36.71-2.36 1.39 0 .92.74 1.36 2.81 1.88 2.64.67 4.04 1.77 4.04 3.84 0 1.97-1.46 3.03-3.14 3.62z" vid="29"></path>
+                        </svg>
+                        <span class="nav-label" vid="30">Capital &amp; Assets</span>
+                    </a>
+                </li>
+                <li vid="31">
+                    <a href="#" class="nav-item" vid="32">
+                        <svg class="nav-icon" viewBox="0 0 24 24" vid="33">
+                            
+                            <path d="M12 15.39l-3.76 2.27.93-4.28-3.32-2.88 4.38-.37L12 6.09l1.77 4.04 4.38.37-3.32 2.88.93 4.28zM22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.39l-3.76 2.27.93-4.28-3.32-2.88 4.38-.37L12 6.09l1.77 4.04 4.38.37-3.32 2.88.93 4.28z" vid="34"></path>
+                        </svg>
+                        <span class="nav-label" vid="35">Visions</span>
+                    </a>
+                </li>
+            </ul>
+
+            <ul class="nav-list sidebar-bottom" vid="36">
+                <li vid="37">
+                    <a href="#" class="nav-item" vid="38">
+                        <svg class="nav-icon" viewBox="0 0 24 24" vid="39">
+                            
+                            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.73 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" vid="40"></path>
+                        </svg>
+                        <span class="nav-label" vid="41">Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        
+        <main class="main-content" vid="42">
+            <header class="main-header" vid="43">
+                <h1 class="header-title" vid="44">Your Narrative</h1>
+                <p class="header-subtitle" vid="45">Tracing the intersection of capital and meaningful life events.</p>
+            </header>
+
+            <div class="timeline-container" vid="46">
+                <div class="timeline-line" vid="47"></div>
+
+                <div class="year-marker" vid="48">2023</div>
+
+                
+                <article class="milestone-node" vid="49">
+                    <div class="milestone-dot type-dream" vid="50"><div class="milestone-dot-inner" vid="51"></div></div>
+                    <div class="card" vid="52">
+                        <div class="card-image-wrap" vid="53">
+                            <img src="https://images.pexels.com/photos/206648/pexels-photo-206648.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=400" alt="Mountain Cabin" vid="54">
+                        </div>
+                        <div class="card-content" vid="55">
+                            <div class="card-meta" vid="56">
+                                <span class="card-date" vid="57">October 12</span>
+                                <span class="card-badge badge-dream" vid="58">Vision Realized</span>
+                            </div>
+                            <h2 class="card-title" vid="59">The Alpine Retreat</h2>
+                            <p class="card-narrative" vid="60">Secured the A-frame cabin in the Cascades. A decade-long dream to establish an anchor point for family gatherings away from the city noise.</p>
+                            
+                            <div class="card-financials" vid="61">
+                                <div class="fin-stat" vid="62">
+                                    <span class="fin-label" vid="63">Capital Deployed</span>
+                                    <span class="fin-value val-negative" vid="64">-$145,000</span>
+                                </div>
+                                <div class="fin-stat" vid="65">
+                                    <span class="fin-label" vid="66">Asset Class</span>
+                                    <span class="fin-value val-neutral" vid="67">Real Estate</span>
+                                </div>
+                                <div class="fin-stat" style="margin-left: auto;" vid="68">
+                                    <span class="fin-label" vid="69">Emotional ROI</span>
+                                    <span class="fin-value val-positive" vid="70">Immeasurable</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                
+                <article class="milestone-node" vid="71">
+                    <div class="milestone-dot type-rational" vid="72"><div class="milestone-dot-inner" vid="73"></div></div>
+                    <div class="card" vid="74">
+                        <div class="card-image-wrap" style="background: #000; display: flex; align-items: center; justify-content: center; color: white; font-family: monospace; font-size: 32px;" vid="75">
+                            { ; }
+                        </div>
+                        <div class="card-content" vid="76">
+                            <div class="card-meta" vid="77">
+                                <span class="card-date" vid="78">March 04</span>
+                                <span class="card-badge badge-rational" vid="79">Strategic Asset</span>
+                            </div>
+                            <h2 class="card-title" vid="80">Seed Funding: Project Loom</h2>
+                            <p class="card-narrative" vid="81">Invested initial capital into the generative workflow startup. A calculated risk to support a technology I deeply believe will shape the next decade.</p>
+                            
+                            <div class="card-financials" vid="82">
+                                <div class="fin-stat" vid="83">
+                                    <span class="fin-label" vid="84">Investment</span>
+                                    <span class="fin-value val-negative" vid="85">-$50,000</span>
+                                </div>
+                                <div class="fin-stat" vid="86">
+                                    <span class="fin-label" vid="87">Current Valuation</span>
+                                    <span class="fin-value val-positive" vid="88">+$112,000</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <div class="year-marker" vid="89">2021</div>
+
+                
+                <article class="milestone-node" vid="90">
+                    <div class="milestone-dot" vid="91"><div class="milestone-dot-inner" vid="92"></div></div>
+                    <div class="card" vid="93">
+                        <div class="card-image-wrap" vid="94">
+                            <img src="https://images.pexels.com/photos/256514/pexels-photo-256514.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=400" alt="Sabbatical" vid="95">
+                        </div>
+                        <div class="card-content" vid="96">
+                            <div class="card-meta" vid="97">
+                                <span class="card-date" vid="98">August 01</span>
+                                <span class="card-badge" vid="99">Life Chapter</span>
+                            </div>
+                            <h2 class="card-title" vid="100">The Kyoto Sabbatical</h2>
+                            <p class="card-narrative" vid="101">Six months stepping away from active operations to study architecture and recharge. The most significant non-financial investment in personal clarity.</p>
+                            
+                            <div class="card-financials" vid="102">
+                                <div class="fin-stat" vid="103">
+                                    <span class="fin-label" vid="104">Living Draw</span>
+                                    <span class="fin-value val-negative" vid="105">-$38,000</span>
+                                </div>
+                                <div class="fin-stat" vid="106">
+                                    <span class="fin-label" vid="107">Opportunity Cost</span>
+                                    <span class="fin-value val-neutral" vid="108">Calculated</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+            </div>
+        </main>
+
+        
+        <aside class="details-panel" vid="109">
+            
+            <div class="hero-metric" vid="110">
+                <div class="fin-label" vid="111">Total Liquid &amp; Asset Value</div>
+                <div class="fin-value" vid="112">$2,845,000</div>
+            </div>
+
+            <div class="panel-section" vid="113">
+                
+                <div class="mini-chart" vid="114">
+                    <svg class="chart-svg" viewBox="0 0 300 80" preserveAspectRatio="none" vid="115">
+                        <defs vid="116">
+                            <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1" vid="117">
+                                <stop offset="0%" stop-color="rgba(0, 122, 255, 0.2)" vid="118"></stop>
+                                <stop offset="100%" stop-color="rgba(0, 122, 255, 0)" vid="119"></stop>
+                            </linearGradient>
+                        </defs>
+                        <path class="chart-area" d="M0,60 L30,55 L60,65 L90,40 L120,45 L150,30 L180,35 L210,15 L240,20 L270,5 L300,10 L300,80 L0,80 Z" fill="url(#chartGradient)" vid="120"></path>
+                        <path class="chart-line" d="M0,60 L30,55 L60,65 L90,40 L120,45 L150,30 L180,35 L210,15 L240,20 L270,5 L300,10" vid="121"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="panel-section" vid="122">
+                <h3 class="section-title" vid="123">Asset Allocation</h3>
+                <ul class="data-list" vid="124">
+                    <li class="data-row" vid="125">
+                        <span class="row-label" vid="126"><div class="row-color-dot" style="background: var(--c-blue);" vid="127"></div> Liquid Capital</span>
+                        <span class="row-value" vid="128">$425,000</span>
+                    </li>
+                    <li class="data-row" vid="129">
+                        <span class="row-label" vid="130"><div class="row-color-dot" style="background: var(--c-text-main);" vid="131"></div> Equities &amp; Index</span>
+                        <span class="row-value" vid="132">$1,150,000</span>
+                    </li>
+                    <li class="data-row" vid="133">
+                        <span class="row-label" vid="134"><div class="row-color-dot" style="background: #D5546C;" vid="135"></div> Real Estate (Visions)</span>
+                        <span class="row-value" vid="136">$850,000</span>
+                    </li>
+                    <li class="data-row" vid="137">
+                        <span class="row-label" vid="138"><div class="row-color-dot" style="background: var(--c-gray-inactive);" vid="139"></div> Private Investments</span>
+                        <span class="row-value" vid="140">$420,000</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="panel-section" style="margin-top: auto;" vid="141">
+                <h3 class="section-title" vid="142">Upcoming Milestones</h3>
+                <ul class="data-list" vid="143">
+                    <li class="data-row" vid="144">
+                        <span class="row-label" style="font-size: 13px;" vid="145">Commercial Space Lease</span>
+                        <span class="row-value" style="font-size: 13px; color: var(--c-text-sub);" vid="146">Q3 2024</span>
+                    </li>
+                    <li class="data-row" vid="147">
+                        <span class="row-label" style="font-size: 13px;" vid="148">Angel Fund Cohort II</span>
+                        <span class="row-value" style="font-size: 13px; color: var(--c-text-sub);" vid="149">Q1 2025</span>
+                    </li>
+                </ul>
+            </div>
+
+        </aside>
+
+    </div>
+
+
+</body></html>

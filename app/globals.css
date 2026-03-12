@@ -1,0 +1,366 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-base: #F4F4F6;
+  --bg-surface: #FFFFFF;
+  --text-primary: #111111;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --border-subtle: #EAEAEA;
+  --border-focus: #CCCCCC;
+  --accent-gold: #F0A07A;
+  --glow-color: rgba(245, 165, 120, 0.25);
+
+  --grad-warm: linear-gradient(135deg, #E28B6B 0%, #D5546C 100%);
+
+  /* Animation durations */
+  --duration-150: 150ms;
+  --duration-300: 300ms;
+  --duration-500: 500ms;
+
+  /* Easing functions */
+  --easing-standard: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --easing-emphasis: cubic-bezier(0.0, 0.0, 0.2, 1);
+  --easing-deceleration: cubic-bezier(0.0, 0.0, 0.2, 1);
+  --easing-acceleration: cubic-bezier(0.4, 0.0, 1, 1);
+}
+
+.dark {
+  --bg-base: #1C1C1E;
+  --bg-surface: #2C2C2E;
+  --text-primary: #FFFFFF;
+  --text-secondary: #98989D;
+  --text-tertiary: #636366;
+  --border-subtle: #38383A;
+  --border-focus: #48484A;
+  --glow-color: rgba(245, 165, 120, 0.15);
+}
+
+.gradient-warm {
+  background: var(--grad-warm);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Enable tabular figures for stable number display */
+  font-variant-numeric: tabular-nums;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.2);
+}
+
+/* Button Styles */
+.btn-primary {
+  background: linear-gradient(135deg, #D5546C 0%, #E28B6B 100%);
+  color: #FFFFFF;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(213, 84, 108, 0.3);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 20px rgba(213, 84, 108, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #FFFFFF;
+  color: var(--text-primary);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: 2px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-secondary:hover {
+  border-color: var(--border-focus);
+  background: var(--bg-base);
+}
+
+/* Button icon */
+.btn-icon {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon:hover {
+  background: var(--bg-system);
+}
+
+/* Input Field Styles */
+.input-field {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 2px solid var(--border-subtle);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  background: #FFFFFF;
+}
+
+.input-field::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Progress bar shimmer animation */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+/* Scroll-driven animations */
+@keyframes fadeUpIn {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.scroll-animate {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+
+.scroll-animate.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Staggered animation delays */
+.scroll-animate:nth-child(1) { transition-delay: 0ms; }
+.scroll-animate:nth-child(2) { transition-delay: 100ms; }
+.scroll-animate:nth-child(3) { transition-delay: 200ms; }
+.scroll-animate:nth-child(4) { transition-delay: 300ms; }
+.scroll-animate:nth-child(5) { transition-delay: 400ms; }
+.scroll-animate:nth-child(6) { transition-delay: 500ms; }
+
+/* Unified Animation Specifications */
+
+/* Card hover effects - scale + glow */
+.card-hover {
+  transition: transform var(--duration-300) var(--easing-standard),
+              box-shadow var(--duration-300) var(--easing-standard);
+}
+
+.card-hover:hover {
+  transform: scale(1.01);
+  box-shadow: 0 0 40px rgba(245, 165, 120, 0.3),
+              0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Button click feedback */
+.btn-click {
+  transition: transform var(--duration-150) var(--easing-emphasis);
+}
+
+.btn-click:active {
+  transform: scale(0.95);
+}
+
+/* Progress bar celebration animation */
+@keyframes celebrate {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.2); }
+}
+
+.progress-celebrate {
+  animation: celebrate 0.3s var(--easing-emphasis);
+}
+
+/* Page fade in */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.page-fade-in {
+  animation: fadeIn var(--duration-500) var(--easing-standard);
+}
+
+/* Modal scale in */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-scale-in {
+  animation: scaleIn var(--duration-300) var(--easing-deceleration);
+}
+
+/* Dark mode specific adjustments */
+.dark .shadow-subtle {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.dark .shadow-elevated {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.dark .shadow-glow {
+  box-shadow: 0 0 80px 15px rgba(245, 165, 120, 0.15);
+}
+
+/* Enhanced button styles with click feedback */
+.btn-primary {
+  background: linear-gradient(135deg, #D5546C 0%, #E28B6B 100%);
+  color: #FFFFFF;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(213, 84, 108, 0.3);
+  transition: all var(--duration-150) var(--easing-standard);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 20px rgba(213, 84, 108, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(213, 84, 108, 0.3);
+}
+
+.btn-secondary {
+  background: #FFFFFF;
+  color: var(--text-primary);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: 2px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all var(--duration-150) var(--easing-standard);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.dark .btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+.btn-secondary:hover {
+  border-color: var(--border-focus);
+  background: var(--bg-base);
+}
+
+.btn-secondary:active {
+  transform: scale(0.95);
+}
+
+/* Card hover enhancements */
+.hover-card {
+  transition: all var(--duration-300) var(--easing-standard);
+}
+
+.hover-card:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15),
+              0 0 0 1px rgba(245, 165, 120, 0.1);
+}
+
+.dark .hover-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6),
+              0 0 0 1px rgba(245, 165, 120, 0.2);
+}
+
+/* Focus visible styles for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--lumen-blue);
+  outline-offset: 2px;
+}
