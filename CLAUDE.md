@@ -4,109 +4,79 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Lumen** is a personal life and wealth management application that combines:
-- Life milestone tracking (important life events)
-- Wealth management (monthly tracking focused on trends and reasons)
-- Goal setting and achievement tracking
-
-**Slogan**: "你的生活，你的微光，你的平衡" (Your Life, Your Light, Your Balance)
+**Lumen** is a personal life and wealth management application (Chinese UI) that combines life milestone tracking, wealth management, and goal setting. Slogan: "你的生活，你的微光，你的平衡".
 
 ## Technology Stack
 
-- **Framework**: Next.js 14 with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Font**: Inter (Google Fonts)
+- Next.js 14 (App Router), TypeScript, Tailwind CSS
+- Charts: Recharts
+- Date handling: date-fns, react-day-picker
+- Icons: lucide-react
 
 ## Development Commands
 
 ```bash
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-
-# Run linter
-npm run lint
+npm run dev        # Start dev server (http://localhost:3000)
+npm run build      # Production build
+npm run lint       # ESLint via next lint
 ```
+
+No test framework is configured yet.
 
 ## Architecture
 
-### Directory Structure
-```
-lumen/
-├── app/              # Next.js App Router pages
-├── components/       # Reusable React components
-├── lib/             # Utilities, helpers, and data
-├── types/           # TypeScript type definitions
-└── public/          # Static assets
-```
+### Routing & Pages
 
-### Key Design Patterns
+All pages are client components (`'use client'`). The root `/` redirects to `/dashboard`.
 
-1. **Type-First Development**: All data structures are defined in `types/index.ts`
-2. **Component Composition**: Reusable components in `/components` directory
-3. **Utility Functions**: Common functions (formatCurrency, formatDate, etc.) in `lib/data.ts`
-4. **Sample Data**: Use sample data from `lib/data.ts` for development and testing
+| Route | File | Purpose |
+|-------|------|---------|
+| `/dashboard` | `app/dashboard/page.tsx` | Overview metrics, wealth summary, insights |
+| `/timeline` | `app/timeline/page.tsx` | Life milestones in alternating card layout |
+| `/wealth` | `app/wealth/page.tsx` | Monthly wealth records with Recharts charts |
+| `/goals` | `app/goals/page.tsx` | Life goal grid with progress tracking |
+| `/assets` | `app/assets/page.tsx` | Asset inventory with allocation breakdown |
 
-### Data Model
+Every page shares the same layout: a fixed 280px `Sidebar` on the left and a scrollable main content area with a hero section.
 
-Core types are defined in `types/index.ts`:
-- **Milestone**: Life events with financial and emotional context
-- **WealthRecord**: Monthly wealth tracking with asset breakdown
-- **LifeGoal**: Personal goals linked to milestones
+### Data Model (`types/index.ts`)
 
-## Design System
+Four core types with comprehensive fields:
+- **Milestone**: Life events with `category` (life-chapter, vision-realized, strategic-asset, experience, foundation), `assetClass`, `status` (compounding, completed, planned), and optional media/links
+- **WealthRecord**: Monthly snapshot with total assets, change amount/reason, and breakdown (liquid, equities, real estate, other)
+- **LifeGoal**: Goals with `category` (financial, experiential, personal-growth, relationship, legacy), `status` (dreaming, planning, in-progress, achieved), and progress percentage
+- **Asset**: Individual asset items with category, value, and metadata
 
-### Color Palette
-- Background: `#F4F4F6` (base), `#FFFFFF` (surface)
-- Text: `#111111` (primary), `#666666` (secondary), `#999999` (tertiary)
-- Accent: `#F0A07A` (gold), `#E28B6B` → `#D5546C` (warm gradient)
-- Border: `#EAEAEA` (subtle), `#CCCCCC` (focus)
+### Shared Components
 
-### Typography
-- Font: Inter family
-- Negative letter-spacing for headings (e.g., `-tracking-tight`)
-- Uppercase with wide letter-spacing for labels (`tracking-widest`)
+- `components/Sidebar.tsx` — Fixed left nav with active state; contains navigation items and global metrics
+- `components/ChapterCard.tsx` — Milestone card with image, metadata, and hover effects
+- `components/ui/Modal.tsx` — Dialog with backdrop and escape-key support
+- `components/ui/Progress.tsx` — Progress bar component
+- `components/ui/DatePicker.tsx` — Date selection wrapping react-day-picker
+- `components/ui/LightGlow.tsx` — Mouse-tracking background glow effect (used in root layout)
 
-### Spacing Scale
-- xs: 4px, sm: 12px, md: 24px, lg: 48px, xl: 96px, xxl: 160px
+### Utilities
 
-### Special Effects
-- Glow shadow: `shadow-glow` for card emphasis
-- Smooth transitions: `transition-all duration-300`
-- Hover effects: Scale and shadow enhancements
+- `lib/data.ts` — Sample data (4 milestones, 6 wealth records, 3 goals) plus `formatCurrency()` (CNY), `formatDate()` (Chinese format), and category label mappers
+- `lib/hooks/useScrollAnimation.ts` — Scroll-triggered animation hook
+- `lib/exportUtils.ts` — Data export utilities
 
-## Component Guidelines
+### State Management
 
-1. **Use TypeScript strictly**: All components should have proper prop types
-2. **Follow design system**: Use Tailwind classes from the design system
-3. **Responsive design**: Mobile-first approach (to be implemented)
-4. **Accessibility**: Use semantic HTML and ARIA labels where needed
+No global state library. Each page manages its own state with React `useState`. Data persistence is not yet implemented — all pages use sample data from `lib/data.ts`.
 
-## Page Structure
+## Design System (`tailwind.config.ts`)
 
-1. **Home Page (`/`)**: Life narrative with milestone cards
-2. **Wealth (`/wealth`)**: Wealth tracking and trends (pending)
-3. **Goals (`/goals`)**: Life goals and progress (pending)
-4. **Assets (`/assets`)**: Asset inventory (pending)
-5. **Visions (`/visions`)**: Future planning (pending)
+- **Colors**: Base `#F4F4F6`, surface `#FFFFFF`, accent gold `#F0A07A`, warm gradient `#E28B6B → #D5546C`, dark mode variants available
+- **Shadows**: `shadow-subtle`, `shadow-elevated`, `shadow-glow` (warm amber glow for card emphasis)
+- **Typography**: Inter font, negative letter-spacing for headings, uppercase with wide tracking for labels
+- **Spacing**: Custom scale — xs:4px, sm:12px, md:24px, lg:48px, xl:96px, xxl:160px
+- **Motion**: `transition-all duration-300` standard; scale/shadow hover effects on cards
 
-## Important Notes
+## Key Conventions
 
-- The app uses Chinese as the primary language
-- Image sources are from Unsplash and Pexels (configured in next.config.js)
-- Current focus is on desktop experience; mobile responsiveness is pending
-- Data persistence is not yet implemented (using sample data)
-
-## Development Workflow
-
-1. Start by checking `types/index.ts` for data structures
-2. Look at existing components in `/components` for patterns
-3. Use utility functions from `lib/data.ts`
-4. Follow the design system in `tailwind.config.ts`
-5. Test changes by running `npm run dev`
+- All UI text is in **Chinese** (`lang="zh-CN"` on root)
+- Components use TypeScript strict typing for all props
+- Client components are marked with `'use client'` directive
+- External images come from Unsplash/Pexels (domains configured in `next.config.js`)
