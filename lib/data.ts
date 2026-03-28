@@ -1,4 +1,4 @@
-import { Milestone, WealthRecord, LifeGoal } from '@/types';
+import { Milestone, WealthRecord, LifeGoal, Project } from '@/types';
 
 // 示例人生节点数据
 export const sampleMilestones: Milestone[] = [
@@ -179,6 +179,7 @@ export const navItems = [
   { label: '人生叙事', href: '/timeline', icon: 'timeline' },
   { label: '财富记录', href: '/wealth', icon: 'account_balance' },
   { label: '人生目标', href: '/goals', icon: 'flag' },
+  { label: '项目作品', href: '/projects', icon: 'code' },
   { label: '资产清单', href: '/assets', icon: 'inventory' },
 ];
 
@@ -222,3 +223,163 @@ export function getAssetClassLabel(assetClass: string): string {
   };
   return labels[assetClass] || assetClass;
 }
+
+// 项目作品集工具函数
+export function getProjectStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    'active': '活跃维护',
+    'in-progress': '开发中',
+    'archived': '已归档',
+    'planning': '规划中',
+  };
+  return labels[status] || status;
+}
+
+export function getProjectCategoryLabel(category: string): string {
+  const labels: Record<string, string> = {
+    'web-app': 'Web 应用',
+    'mobile-app': '移动应用',
+    'cli-tool': '命令行工具',
+    'library': '开源库',
+    'api-service': 'API 服务',
+    'automation': '自动化',
+    'design': '设计项目',
+    'experiment': '实验项目',
+  };
+  return labels[category] || category;
+}
+
+export function getMilestoneTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    'release': '版本发布',
+    'feature': '功能上线',
+    'achievement': '成就达成',
+    'learning': '学习收获',
+  };
+  return labels[type] || type;
+}
+
+// 示例项目数据
+export const sampleProjects: Project[] = [
+  {
+    id: 'proj-1',
+    name: 'Lumen',
+    description: '个人生活与财富管理应用，记录人生节点，追踪财富变化，实现生活与微光的平衡。',
+    longDescription: 'Lumen 是我最核心的个人项目。它不仅是一个应用，更是一种生活哲学的实践——把人生的每个重要决定当作一次资本配置，量化情感回报，追踪长期趋势。',
+    status: 'active',
+    category: 'web-app',
+    coverImage: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1470&auto=format&fit=crop',
+    techStack: ['Next.js', 'TypeScript', 'Tailwind CSS', 'Recharts'],
+    links: [
+      { label: 'GitHub', url: 'https://github.com/vccyb/Lumen' },
+    ],
+    startDate: new Date('2025-01-15'),
+    lastUpdated: new Date('2026-03-20'),
+    progress: 65,
+    milestones: [
+      { id: 'pm-1', date: new Date('2025-01-15'), title: '项目启动', description: '确定产品方向与技术栈', type: 'learning' },
+      { id: 'pm-2', date: new Date('2025-03-01'), title: 'MVP 完成', description: '核心功能开发完成', type: 'feature' },
+      { id: 'pm-3', date: new Date('2025-06-15'), title: 'v1.0 发布', description: '人生叙事 + 财富记录上线', type: 'release' },
+      { id: 'pm-4', date: new Date('2026-01-10'), title: '目标追踪上线', description: '人生目标模块完成', type: 'feature' },
+    ],
+    learnings: ['Next.js App Router 深度实践', '个人产品的设计思维', '数据可视化的艺术'],
+    emotionalYield: ['成就感', '创造', '自我认知'],
+    estimatedHoursInvested: 320,
+    monthlyCost: 0,
+    featured: true,
+  },
+  {
+    id: 'proj-2',
+    name: 'CloudSync CLI',
+    description: '多云环境文件同步命令行工具，支持 AWS S3、阿里云 OSS、腾讯云 COS。',
+    longDescription: '在多个云服务之间同步文件时遇到了痛点，于是开发了这款 CLI 工具。支持增量同步、并发传输、断点续传。',
+    status: 'active',
+    category: 'cli-tool',
+    coverImage: 'https://images.unsplash.com/photo-1629654297299-c8506221ca97?q=80&w=1470&auto=format&fit=crop',
+    techStack: ['Go', 'AWS SDK', 'Cobra'],
+    links: [
+      { label: 'GitHub', url: 'https://github.com/vccyb/cloudsync' },
+      { label: 'Documentation', url: 'https://cloudsync.dev/docs' },
+    ],
+    startDate: new Date('2024-06-01'),
+    lastUpdated: new Date('2026-02-15'),
+    progress: 90,
+    milestones: [
+      { id: 'pm-5', date: new Date('2024-08-20'), title: 'v0.1 内测', description: '基础 S3 同步功能', type: 'release' },
+      { id: 'pm-6', date: new Date('2025-01-10'), title: 'v1.0 发布', description: '多云支持 + 增量同步', type: 'release' },
+      { id: 'pm-7', date: new Date('2025-09-01'), title: '100 Stars', description: 'GitHub 获得第一个 100 stars', type: 'achievement' },
+    ],
+    learnings: ['Go 并发编程', 'CLI 用户体验设计', '开源社区运营'],
+    emotionalYield: ['技术深度', '社区认同'],
+    estimatedHoursInvested: 180,
+    monthlyCost: 0,
+    featured: true,
+  },
+  {
+    id: 'proj-3',
+    name: 'MarkdownNote',
+    description: '基于本地文件的轻量 Markdown 笔记应用，支持双向链接和知识图谱可视化。',
+    status: 'archived',
+    category: 'web-app',
+    techStack: ['React', 'Electron', 'SQLite', 'D3.js'],
+    links: [
+      { label: 'GitHub', url: 'https://github.com/vccyb/markdownnote' },
+    ],
+    startDate: new Date('2023-03-01'),
+    lastUpdated: new Date('2024-12-01'),
+    milestones: [
+      { id: 'pm-8', date: new Date('2023-06-01'), title: 'v0.1 Alpha', type: 'release' },
+      { id: 'pm-9', date: new Date('2024-01-15'), title: '知识图谱上线', type: 'feature' },
+      { id: 'pm-10', date: new Date('2024-12-01'), title: '项目归档', description: '转向 Obsidian，停止维护', type: 'learning' },
+    ],
+    learnings: ['Electron 桌面开发', '图数据库基础', 'D3.js 可视化'],
+    emotionalYield: ['探索', '满足感'],
+    estimatedHoursInvested: 250,
+    monthlyCost: 0,
+  },
+  {
+    id: 'proj-4',
+    name: 'PaySplit',
+    description: '朋友间的 AA 记账小程序，支持微信支付凭证自动识别和智能分账。',
+    status: 'in-progress',
+    category: 'mobile-app',
+    techStack: ['Flutter', 'Dart', 'Firebase', 'OCR'],
+    links: [
+      { label: 'GitHub', url: 'https://github.com/vccyb/paysplit' },
+    ],
+    startDate: new Date('2026-01-10'),
+    lastUpdated: new Date('2026-03-25'),
+    progress: 30,
+    milestones: [
+      { id: 'pm-11', date: new Date('2026-01-10'), title: '项目立项', description: '旅行中发现的痛点', type: 'learning' },
+      { id: 'pm-12', date: new Date('2026-02-20'), title: 'UI 原型完成', type: 'feature' },
+    ],
+    learnings: ['Flutter 跨平台开发', 'OCR 集成'],
+    emotionalYield: ['好奇心', '解决问题'],
+    estimatedHoursInvested: 60,
+    monthlyCost: 50,
+  },
+  {
+    id: 'proj-5',
+    name: 'React Animate Kit',
+    description: '轻量级 React 动画组件库，提供 20+ 开箱即用的动画效果。',
+    status: 'archived',
+    category: 'library',
+    techStack: ['React', 'TypeScript', 'Storybook'],
+    links: [
+      { label: 'GitHub', url: 'https://github.com/vccyb/react-animate-kit' },
+      { label: 'npm', url: 'https://www.npmjs.com/package/react-animate-kit' },
+    ],
+    startDate: new Date('2023-09-01'),
+    lastUpdated: new Date('2025-03-01'),
+    milestones: [
+      { id: 'pm-13', date: new Date('2024-01-15'), title: 'npm 发布', type: 'release' },
+      { id: 'pm-14', date: new Date('2024-08-01'), title: '500+ 周下载量', type: 'achievement' },
+      { id: 'pm-15', date: new Date('2025-03-01'), title: '停止维护', description: 'Framer Motion 已足够成熟', type: 'learning' },
+    ],
+    learnings: ['npm 包发布流程', '动画原理', '开源文档编写'],
+    emotionalYield: ['分享', '成长'],
+    estimatedHoursInvested: 120,
+    monthlyCost: 0,
+  },
+];

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { sampleMilestones, sampleWealthRecords, sampleLifeGoals, formatCurrency } from '@/lib/data';
 import { useScrollAnimation } from '@/lib/hooks/useScrollAnimation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 export default function DashboardPage() {
   const [milestones] = useState(sampleMilestones);
@@ -64,7 +66,7 @@ export default function DashboardPage() {
             {/* Top Cards Row */}
             <div className="grid grid-cols-4 gap-6 mb-8">
               {/* Total Assets */}
-              <div className="bg-lumen-surface rounded-2xl p-6 shadow-subtle border border-lumen-border-subtle hover:shadow-elevated transition-shadow">
+              <Card className="p-6">
                 <div className="text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-3">
                   总资产
                 </div>
@@ -75,10 +77,10 @@ export default function DashboardPage() {
                   {yearlyChange >= 0 ? '+' : ''}{formatCurrency(yearlyChange)}
                   <span className="text-lumen-text-secondary ml-1">今年</span>
                 </div>
-              </div>
+              </Card>
 
               {/* Year Milestones */}
-              <div className="bg-lumen-surface rounded-2xl p-6 shadow-subtle border border-lumen-border-subtle hover:shadow-elevated transition-shadow">
+              <Card className="p-6">
                 <div className="text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-3">
                   今年节点
                 </div>
@@ -88,10 +90,10 @@ export default function DashboardPage() {
                 <div className="text-sm text-lumen-text-secondary">
                   个人故事的重要时刻
                 </div>
-              </div>
+              </Card>
 
               {/* Goals Progress */}
-              <div className="bg-lumen-surface rounded-2xl p-6 shadow-subtle border border-lumen-border-subtle hover:shadow-elevated transition-shadow">
+              <Card className="p-6">
                 <div className="text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-3">
                   目标进度
                 </div>
@@ -101,120 +103,116 @@ export default function DashboardPage() {
                 <div className="text-sm text-lumen-text-secondary">
                   {inProgressGoals} 个进行中
                 </div>
-              </div>
+              </Card>
 
               {/* Emotional Yield */}
-              <div className="bg-lumen-surface rounded-2xl p-6 shadow-subtle border border-lumen-border-subtle hover:shadow-elevated transition-shadow">
+              <Card className="p-6">
                 <div className="text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-3">
                   主要情感收益
                 </div>
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {topEmotions.map(([emotion, count]) => (
-                    <span
-                      key={emotion}
-                      className="px-2 py-1 bg-lumen-bg-system rounded-md text-xs font-medium text-lumen-text-secondary"
-                    >
+                    <Badge key={emotion} variant="secondary" className="text-xs">
                       {emotion}
-                    </span>
+                    </Badge>
                   ))}
                 </div>
-              </div>
+              </Card>
             </div>
 
             {/* Main Content Row */}
             <div className="grid grid-cols-2 gap-8">
               {/* Left: Wealth Capital */}
-              <div className="bg-lumen-surface rounded-2xl p-8 shadow-subtle border border-lumen-border-subtle">
-                <h3 className="text-xl font-semibold text-lumen-text-primary mb-6">
-                  财富资本
-                </h3>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-xl">财富资本</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-4 bg-lumen-bg-system rounded-xl">
+                      <span className="text-sm text-lumen-text-secondary">年度变化</span>
+                      <span className={`text-lg font-bold ${yearlyChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {yearlyChange >= 0 ? '+' : ''}{formatCurrency(yearlyChange)}
+                      </span>
+                    </div>
 
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-4 bg-lumen-bg-system rounded-xl">
-                    <span className="text-sm text-lumen-text-secondary">年度变化</span>
-                    <span className={`text-lg font-bold ${yearlyChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {yearlyChange >= 0 ? '+' : ''}{formatCurrency(yearlyChange)}
-                    </span>
-                  </div>
+                    <div className="flex justify-between items-center p-4 bg-lumen-bg-system rounded-xl">
+                      <span className="text-sm text-lumen-text-secondary">年度增长率</span>
+                      <span className={`text-lg font-bold ${yearlyChangePercent !== '0.0' ? 'text-green-500' : 'text-lumen-text-primary'}`}>
+                        {yearlyChangePercent}%
+                      </span>
+                    </div>
 
-                  <div className="flex justify-between items-center p-4 bg-lumen-bg-system rounded-xl">
-                    <span className="text-sm text-lumen-text-secondary">年度增长率</span>
-                    <span className={`text-lg font-bold ${yearlyChangePercent !== '0.0' ? 'text-green-500' : 'text-lumen-text-primary'}`}>
-                      {yearlyChangePercent}%
-                    </span>
-                  </div>
-
-                  <div className="p-4 bg-lumen-bg-system rounded-xl">
-                    <div className="text-sm text-lumen-text-secondary mb-3">资产配置概览</div>
-                    {records.length > 0 && (
-                      <div className="space-y-2">
-                        {Object.entries(records[records.length - 1].breakdown).map(([key, value]) => {
-                          const labels: Record<string, string> = {
-                            liquidCapital: '流动资金',
-                            equities: '股票与指数',
-                            realEstate: '房地产',
-                            other: '其他资产',
-                          };
-                          const percentage = ((value / currentTotal) * 100).toFixed(1);
-                          return (
-                            <div key={key} className="flex justify-between items-center">
-                              <span className="text-sm text-lumen-text-secondary">{labels[key]}</span>
-                              <span className="text-sm font-medium text-lumen-text-primary">
-                                {percentage}%
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Right: Life Capital */}
-              <div className="bg-lumen-surface rounded-2xl p-8 shadow-subtle border border-lumen-border-subtle">
-                <h3 className="text-xl font-semibold text-lumen-text-primary mb-6">
-                  人生资本
-                </h3>
-
-                <div className="space-y-4">
-                  <div className="p-4 bg-lumen-bg-system rounded-xl">
-                    <div className="text-sm text-lumen-text-secondary mb-3">2026 季度回顾</div>
-                    <p className="text-base text-lumen-text-primary leading-relaxed">
-                      你主要把资本投入在<span className="font-semibold">家庭</span>和<span className="font-semibold">学习</span>上，
-                      主要的情感收益是<span className="font-semibold">安心</span>、<span className="font-semibold">成长</span>。
-                    </p>
-                  </div>
-
-                  <div className="p-4 bg-lumen-bg-system rounded-xl">
-                    <div className="text-sm text-lumen-text-secondary mb-3">热门标签</div>
-                    <div className="flex flex-wrap gap-2">
-                      {['稳定', '成长', '探索', '自由', '家庭'].map(tag => (
-                        <span
-                          key={tag}
-                          className="px-3 py-1.5 bg-lumen-accent-gold/10 text-lumen-accent-gold rounded-lg text-sm font-medium"
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                    <div className="p-4 bg-lumen-bg-system rounded-xl">
+                      <div className="text-sm text-lumen-text-secondary mb-3">资产配置概览</div>
+                      {records.length > 0 && (
+                        <div className="space-y-2">
+                          {Object.entries(records[records.length - 1].breakdown).map(([key, value]) => {
+                            const labels: Record<string, string> = {
+                              liquidCapital: '流动资金',
+                              equities: '股票与指数',
+                              realEstate: '房地产',
+                              other: '其他资产',
+                            };
+                            const percentage = ((value / currentTotal) * 100).toFixed(1);
+                            return (
+                              <div key={key} className="flex justify-between items-center">
+                                <span className="text-sm text-lumen-text-secondary">{labels[key]}</span>
+                                <span className="text-sm font-medium text-lumen-text-primary">
+                                  {percentage}%
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
+                </CardContent>
+              </Card>
 
-                  <div className="p-4 bg-lumen-bg-system rounded-xl">
-                    <div className="text-sm text-lumen-text-secondary mb-2">下一步建议</div>
-                    <ul className="space-y-1.5 text-sm text-lumen-text-secondary">
-                      <li className="flex items-start gap-2">
-                        <span className="text-lumen-accent-gold mt-0.5">→</span>
-                        <span>继续增加股票配置，提升长期收益潜力</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-lumen-accent-gold mt-0.5">→</span>
-                        <span>考虑下一个体验式人生节点</span>
-                      </li>
-                    </ul>
+              {/* Right: Life Capital */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-xl">人生资本</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-lumen-bg-system rounded-xl">
+                      <div className="text-sm text-lumen-text-secondary mb-3">2026 季度回顾</div>
+                      <p className="text-base text-lumen-text-primary leading-relaxed">
+                        你主要把资本投入在<span className="font-semibold">家庭</span>和<span className="font-semibold">学习</span>上，
+                        主要的情感收益是<span className="font-semibold">安心</span>、<span className="font-semibold">成长</span>。
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-lumen-bg-system rounded-xl">
+                      <div className="text-sm text-lumen-text-secondary mb-3">热门标签</div>
+                      <div className="flex flex-wrap gap-2">
+                        {['稳定', '成长', '探索', '自由', '家庭'].map(tag => (
+                          <Badge key={tag} variant="secondary" className="bg-lumen-accent-gold/10 text-lumen-accent-gold hover:bg-lumen-accent-gold/20">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-lumen-bg-system rounded-xl">
+                      <div className="text-sm text-lumen-text-secondary mb-2">下一步建议</div>
+                      <ul className="space-y-1.5 text-sm text-lumen-text-secondary">
+                        <li className="flex items-start gap-2">
+                          <span className="text-lumen-accent-gold mt-0.5">→</span>
+                          <span>继续增加股票配置，提升长期收益潜力</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-lumen-accent-gold mt-0.5">→</span>
+                          <span>考虑下一个体验式人生节点</span>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>

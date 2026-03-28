@@ -4,7 +4,26 @@ import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { sampleWealthRecords, formatCurrency, formatDate } from '@/lib/data';
 import { WealthRecord } from '@/types';
-import Modal from '@/components/ui/Modal';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Pencil, Trash2 } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -126,18 +145,18 @@ export default function WealthPage() {
                 财富记录
               </div>
               <div className="flex items-center gap-3">
-                <button
+                <Button
+                  variant="secondary"
                   onClick={() => setShowChartPanel(!showChartPanel)}
-                  className={`btn-secondary ${showChartPanel ? 'btn-primary' : ''}`}
                 >
                   {showChartPanel ? '隐藏图表' : '显示图表'}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="warm"
                   onClick={handleAddMonth}
-                  className="btn-primary"
                 >
                   + 新增月份
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -151,7 +170,7 @@ export default function WealthPage() {
 
           {/* Summary Card */}
           <section className="px-24 pb-12 max-w-[1100px] mx-auto">
-            <div className="bg-lumen-surface rounded-2xl p-8 shadow-glow border border-lumen-border-subtle">
+            <Card className="p-8 shadow-glow">
               <div className="grid grid-cols-4 gap-8">
                 <div>
                   <div className="text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
@@ -186,48 +205,18 @@ export default function WealthPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
           </section>
 
           {/* Filter Bar */}
           <section className="px-24 pb-8 max-w-[1100px] mx-auto">
-            <div className="flex items-center gap-4">
-              <span className="text-xs text-lumen-text-tertiary uppercase tracking-widest font-semibold">
-                筛选:
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setFilterCategory('all')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    filterCategory === 'all'
-                      ? 'bg-lumen-text-primary text-white'
-                      : 'bg-lumen-surface text-lumen-text-secondary hover:bg-lumen-bg-system'
-                  }`}
-                >
-                  全部
-                </button>
-                <button
-                  onClick={() => setFilterCategory('positive')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    filterCategory === 'positive'
-                      ? 'bg-green-500 text-white'
-                      : 'bg-lumen-surface text-lumen-text-secondary hover:bg-lumen-bg-system'
-                  }`}
-                >
-                  增长
-                </button>
-                <button
-                  onClick={() => setFilterCategory('negative')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    filterCategory === 'negative'
-                      ? 'bg-red-500 text-white'
-                      : 'bg-lumen-surface text-lumen-text-secondary hover:bg-lumen-bg-system'
-                  }`}
-                >
-                  下降
-                </button>
-              </div>
-            </div>
+            <Tabs value={filterCategory} onValueChange={setFilterCategory}>
+              <TabsList>
+                <TabsTrigger value="all">全部</TabsTrigger>
+                <TabsTrigger value="positive">增长</TabsTrigger>
+                <TabsTrigger value="negative">下降</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </section>
 
           {/* Records List */}
@@ -238,32 +227,31 @@ export default function WealthPage() {
                 const isPositive = changeRate >= 0;
 
                 return (
-                  <article
-                    key={record.id}
-                    className="bg-lumen-surface rounded-2xl p-8 shadow-subtle border border-lumen-border-subtle hover:shadow-elevated transition-all relative group"
-                  >
+                  <Card key={record.id} className="hover:shadow-elevated transition-all relative group">
                     {/* Edit/Delete Buttons */}
                     <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => {
                           setEditingRecord(record);
                           setShowAddModal(true);
                         }}
-                        className="p-2 bg-lumen-bg-system/80 backdrop-blur-sm rounded-lg shadow-subtle hover:bg-white text-lumen-text-secondary hover:text-lumen-text-primary transition-all"
+                        className="h-8 w-8 bg-lumen-bg-system/80 backdrop-blur-sm hover:bg-white"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleDeleteRecord(record.id)}
-                        className="p-2 bg-lumen-bg-system/80 backdrop-blur-sm rounded-lg shadow-subtle hover:bg-red-50 text-lumen-text-secondary hover:text-red-500 transition-all"
+                        className="h-8 w-8 bg-lumen-bg-system/80 backdrop-blur-sm hover:bg-red-50 hover:text-red-500"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
+
+                    <CardContent className="p-8">
 
                     <div className="flex items-start justify-between mb-6 pr-16">
                       <div className="flex items-center gap-6">
@@ -337,7 +325,8 @@ export default function WealthPage() {
                         </div>
                       </div>
                     </div>
-                  </article>
+                  </CardContent>
+                </Card>
                 );
               })}
             </div>
@@ -658,157 +647,135 @@ export default function WealthPage() {
         )}
       </main>
 
-      {/* Add/Edit Modal */}
-      <Modal
-        isOpen={showAddModal}
-        onClose={handleCloseModal}
-        title={editingRecord ? '编辑记录' : '添加财富记录'}
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            const newRecord: Omit<WealthRecord, 'id'> = {
-              date: new Date(formData.get('date') as string),
-              totalAssets: Number(formData.get('totalAssets')),
-              changeAmount: Number(formData.get('changeAmount')),
-              changeReason: formData.get('changeReason') as string,
-              breakdown: {
-                liquidCapital: Number(formData.get('liquidCapital')),
-                equities: Number(formData.get('equities')),
-                realEstate: Number(formData.get('realEstate')),
-                other: Number(formData.get('other')),
-              },
-            };
+      {/* Add/Edit Dialog */}
+      <Dialog open={showAddModal} onOpenChange={handleCloseModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingRecord ? '编辑记录' : '添加财富记录'}</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const newRecord: Omit<WealthRecord, 'id'> = {
+                date: new Date(formData.get('date') as string),
+                totalAssets: Number(formData.get('totalAssets')),
+                changeAmount: Number(formData.get('changeAmount')),
+                changeReason: formData.get('changeReason') as string,
+                breakdown: {
+                  liquidCapital: Number(formData.get('liquidCapital')),
+                  equities: Number(formData.get('equities')),
+                  realEstate: Number(formData.get('realEstate')),
+                  other: Number(formData.get('other')),
+                },
+              };
 
-            if (editingRecord) {
-              handleUpdateRecord({ ...newRecord, id: editingRecord.id });
-            } else {
-              handleAddRecord(newRecord);
-            }
-          }}
-          className="space-y-4"
-        >
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              日期
-            </label>
-            <input
-              type="date"
-              name="date"
-              defaultValue={editingRecord ? editingRecord.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
-              required
-              className="input-field"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              总资产
-            </label>
-            <input
-              type="number"
-              name="totalAssets"
-              defaultValue={editingRecord?.totalAssets}
-              required
-              className="input-field"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              变化金额
-            </label>
-            <input
-              type="number"
-              name="changeAmount"
-              defaultValue={editingRecord?.changeAmount}
-              required
-              className="input-field"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              变化原因
-            </label>
-            <input
-              type="text"
-              name="changeReason"
-              defaultValue={editingRecord?.changeReason}
-              required
-              className="input-field"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-                流动资金
-              </label>
-              <input
-                type="number"
-                name="liquidCapital"
-                defaultValue={editingRecord?.breakdown.liquidCapital}
+              if (editingRecord) {
+                handleUpdateRecord({ ...newRecord, id: editingRecord.id });
+              } else {
+                handleAddRecord(newRecord);
+              }
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="date">日期</Label>
+              <Input
+                id="date"
+                type="date"
+                name="date"
+                defaultValue={editingRecord ? editingRecord.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
                 required
-                className="input-field"
               />
             </div>
-            <div>
-              <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-                股票与指数
-              </label>
-              <input
-                type="number"
-                name="equities"
-                defaultValue={editingRecord?.breakdown.equities}
-                required
-                className="input-field"
-              />
-            </div>
-            <div>
-              <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-                房地产
-              </label>
-              <input
-                type="number"
-                name="realEstate"
-                defaultValue={editingRecord?.breakdown.realEstate}
-                required
-                className="input-field"
-              />
-            </div>
-            <div>
-              <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-                其他资产
-              </label>
-              <input
-                type="number"
-                name="other"
-                defaultValue={editingRecord?.breakdown.other}
-                required
-                className="input-field"
-              />
-            </div>
-          </div>
 
-          <div className="flex gap-3 pt-4">
-            <button
-              type="submit"
-              className="btn-primary flex-1"
-            >
-              {editingRecord ? '保存' : '添加'}
-            </button>
-            <button
-              type="button"
-              onClick={handleCloseModal}
-              className="btn-secondary"
-            >
-              取消
-            </button>
-          </div>
-        </form>
-      </Modal>
+            <div className="space-y-2">
+              <Label htmlFor="totalAssets">总资产</Label>
+              <Input
+                id="totalAssets"
+                type="number"
+                name="totalAssets"
+                defaultValue={editingRecord?.totalAssets}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="changeAmount">变化金额</Label>
+              <Input
+                id="changeAmount"
+                type="number"
+                name="changeAmount"
+                defaultValue={editingRecord?.changeAmount}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="changeReason">变化原因</Label>
+              <Input
+                id="changeReason"
+                type="text"
+                name="changeReason"
+                defaultValue={editingRecord?.changeReason}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="liquidCapital">流动资金</Label>
+                <Input
+                  id="liquidCapital"
+                  type="number"
+                  name="liquidCapital"
+                  defaultValue={editingRecord?.breakdown.liquidCapital}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="equities">股票与指数</Label>
+                <Input
+                  id="equities"
+                  type="number"
+                  name="equities"
+                  defaultValue={editingRecord?.breakdown.equities}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="realEstate">房地产</Label>
+                <Input
+                  id="realEstate"
+                  type="number"
+                  name="realEstate"
+                  defaultValue={editingRecord?.breakdown.realEstate}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="other">其他资产</Label>
+                <Input
+                  id="other"
+                  type="number"
+                  name="other"
+                  defaultValue={editingRecord?.breakdown.other}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button type="submit" variant="warm" className="flex-1">
+                {editingRecord ? '保存' : '添加'}
+              </Button>
+              <Button type="button" variant="secondary" onClick={handleCloseModal}>
+                取消
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

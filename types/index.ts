@@ -135,3 +135,60 @@ export interface BackupMetadata {
   dataSize: number;
   checksum: string;
 }
+
+// ==========================================
+// 项目作品集类型
+// ==========================================
+
+export type ProjectStatus =
+  | 'active'          // 活跃维护
+  | 'in-progress'     // 开发中
+  | 'archived'        // 已归档
+  | 'planning';       // 规划中
+
+export type ProjectCategory =
+  | 'web-app'         // Web 应用
+  | 'mobile-app'      // 移动应用
+  | 'cli-tool'        // 命令行工具
+  | 'library'         // 开源库
+  | 'api-service'     // API 服务
+  | 'automation'      // 自动化
+  | 'design'          // 设计项目
+  | 'experiment';     // 实验项目
+
+export type ProjectMilestoneType = 'release' | 'feature' | 'achievement' | 'learning';
+
+export interface ProjectMilestone {
+  id: string;
+  date: Date;
+  title: string;
+  description?: string;
+  type: ProjectMilestoneType;
+  link?: string;
+}
+
+export interface ProjectLink {
+  label: string;
+  url: string;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  description: string;
+  longDescription?: string;
+  status: ProjectStatus;
+  category: ProjectCategory;
+  coverImage?: string;
+  techStack: string[];
+  links: ProjectLink[];
+  startDate: Date;
+  lastUpdated: Date;
+  progress?: number;
+  milestones: ProjectMilestone[];
+  learnings?: string[];
+  emotionalYield?: string[];
+  estimatedHoursInvested?: number;
+  monthlyCost?: number;
+  featured?: boolean;
+}

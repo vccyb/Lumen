@@ -4,7 +4,17 @@ import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { sampleWealthRecords, formatCurrency } from '@/lib/data';
 import { WealthRecord } from '@/types';
-import Modal from '@/components/ui/Modal';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export default function AssetsPage() {
   const [records, setRecords] = useState(sampleWealthRecords);
@@ -58,12 +68,9 @@ export default function AssetsPage() {
             <div className="text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold">
               资产清单
             </div>
-            <button
-              onClick={handleEditClick}
-              className="btn-primary"
-            >
+            <Button variant="warm" onClick={handleEditClick}>
               编辑资产配置
-            </button>
+            </Button>
           </div>
 
           <h1 className="text-[64px] leading-tight mb-6 text-lumen-text-primary max-w-[800px] tracking-tight">
@@ -78,7 +85,7 @@ export default function AssetsPage() {
 
         {/* Summary Card */}
         <section className="px-24 pb-12 max-w-[1100px] mx-auto">
-          <div className="bg-lumen-surface rounded-2xl p-8 shadow-glow border border-lumen-border-subtle">
+          <Card className="p-8 shadow-glow">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <div className="text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
@@ -127,7 +134,7 @@ export default function AssetsPage() {
                 );
               })}
             </div>
-          </div>
+          </Card>
         </section>
 
         {/* Assets Grid */}
@@ -136,19 +143,16 @@ export default function AssetsPage() {
             {assets.map((asset) => {
               const percentage = ((asset.value / currentWealth.totalAssets) * 100).toFixed(1);
               return (
-                <article
-                  key={asset.name}
-                  className="bg-lumen-surface rounded-2xl p-6 shadow-subtle border border-lumen-border-subtle hover:shadow-elevated transition-shadow"
-                >
+                <Card key={asset.name} className="p-6">
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{asset.icon}</span>
                       <div>
                         <h3 className="text-lg font-semibold text-lumen-text-primary">{asset.name}</h3>
-                        <p className="text-xs text-lumen-text-tertiary uppercase tracking-wider mt-0.5">
+                        <Badge variant="secondary" className="text-xs mt-0.5">
                           {asset.category}
-                        </p>
+                        </Badge>
                       </div>
                     </div>
                     <div className="text-right">
@@ -173,119 +177,103 @@ export default function AssetsPage() {
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
-                </article>
+                </Card>
               );
             })}
           </div>
         </section>
       </main>
 
-      {/* Edit Assets Modal */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={handleCloseModal}
-        title="编辑资产配置"
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            const updatedRecord: WealthRecord = {
-              ...editingRecord!,
-              totalAssets: Number(formData.get('totalAssets')),
-              breakdown: {
-                liquidCapital: Number(formData.get('liquidCapital')),
-                equities: Number(formData.get('equities')),
-                realEstate: Number(formData.get('realEstate')),
-                other: Number(formData.get('other')),
-              },
-            };
-            handleUpdateAssets(updatedRecord);
-          }}
-          className="space-y-4"
-        >
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              总资产
-            </label>
-            <input
-              type="number"
-              name="totalAssets"
-              defaultValue={editingRecord?.totalAssets}
-              required
-              className="input-field"
-            />
-          </div>
+      {/* Edit Assets Dialog */}
+      <Dialog open={showEditModal} onOpenChange={handleCloseModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>编辑资产配置</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const updatedRecord: WealthRecord = {
+                ...editingRecord!,
+                totalAssets: Number(formData.get('totalAssets')),
+                breakdown: {
+                  liquidCapital: Number(formData.get('liquidCapital')),
+                  equities: Number(formData.get('equities')),
+                  realEstate: Number(formData.get('realEstate')),
+                  other: Number(formData.get('other')),
+                },
+              };
+              handleUpdateAssets(updatedRecord);
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="totalAssets">总资产</Label>
+              <Input
+                id="totalAssets"
+                type="number"
+                name="totalAssets"
+                defaultValue={editingRecord?.totalAssets}
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              流动资金
-            </label>
-            <input
-              type="number"
-              name="liquidCapital"
-              defaultValue={editingRecord?.breakdown.liquidCapital}
-              required
-              className="input-field"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="liquidCapital">流动资金</Label>
+              <Input
+                id="liquidCapital"
+                type="number"
+                name="liquidCapital"
+                defaultValue={editingRecord?.breakdown.liquidCapital}
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              股票与指数
-            </label>
-            <input
-              type="number"
-              name="equities"
-              defaultValue={editingRecord?.breakdown.equities}
-              required
-              className="input-field"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="equities">股票与指数</Label>
+              <Input
+                id="equities"
+                type="number"
+                name="equities"
+                defaultValue={editingRecord?.breakdown.equities}
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              房地产
-            </label>
-            <input
-              type="number"
-              name="realEstate"
-              defaultValue={editingRecord?.breakdown.realEstate}
-              required
-              className="input-field"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="realEstate">房地产</Label>
+              <Input
+                id="realEstate"
+                type="number"
+                name="realEstate"
+                defaultValue={editingRecord?.breakdown.realEstate}
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              其他资产
-            </label>
-            <input
-              type="number"
-              name="other"
-              defaultValue={editingRecord?.breakdown.other}
-              required
-              className="input-field"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="other">其他资产</Label>
+              <Input
+                id="other"
+                type="number"
+                name="other"
+                defaultValue={editingRecord?.breakdown.other}
+                required
+              />
+            </div>
 
-          <div className="flex gap-3 pt-4">
-            <button
-              type="submit"
-              className="btn-primary flex-1"
-            >
-              保存
-            </button>
-            <button
-              type="button"
-              onClick={handleCloseModal}
-              className="btn-secondary"
-            >
-              取消
-            </button>
-          </div>
-        </form>
-      </Modal>
+            <div className="flex gap-3 pt-4">
+              <Button type="submit" variant="warm" className="flex-1">
+                保存
+              </Button>
+              <Button type="button" variant="secondary" onClick={handleCloseModal}>
+                取消
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

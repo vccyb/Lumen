@@ -5,9 +5,25 @@ import Sidebar from '@/components/Sidebar';
 import { sampleMilestones, formatCurrency } from '@/lib/data';
 import { Milestone } from '@/types';
 import Image from 'next/image';
-import Modal from '@/components/ui/Modal';
-import DatePicker from '@/components/ui/DatePicker';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useScrollAnimation } from '@/lib/hooks/useScrollAnimation';
+import { Pencil, Trash2 } from 'lucide-react';
 
 export default function HomePage() {
   const [milestones, setMilestones] = useState(sampleMilestones);
@@ -71,12 +87,9 @@ export default function HomePage() {
             <div className="text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold">
               人生叙事
             </div>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="btn-primary"
-            >
+            <Button variant="warm" onClick={() => setShowAddModal(true)}>
               + 新增人生节点
-            </button>
+            </Button>
           </div>
 
           <h1 className="text-[64px] leading-tight mb-6 text-lumen-text-primary max-w-[800px] tracking-tight">
@@ -103,25 +116,25 @@ export default function HomePage() {
               >
                 {/* Edit/Delete Buttons - Inside card, visible on hover */}
                 <div className={`absolute top-6 ${isEven ? 'left-6' : 'right-6'} flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => {
                       setEditingMilestone(milestone);
                       setShowAddModal(true);
                     }}
-                    className="p-2 bg-lumen-bg-system/80 backdrop-blur-sm rounded-lg shadow-subtle hover:bg-white text-lumen-text-secondary hover:text-lumen-text-primary transition-all"
+                    className="h-8 w-8 bg-lumen-bg-system/80 backdrop-blur-sm hover:bg-white"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                  <button
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => handleDeleteMilestone(milestone.id)}
-                    className="p-2 bg-lumen-bg-system/80 backdrop-blur-sm rounded-lg shadow-subtle hover:bg-red-50 text-lumen-text-secondary hover:text-red-500 transition-all"
+                    className="h-8 w-8 bg-lumen-bg-system/80 backdrop-blur-sm hover:bg-red-50 hover:text-red-500"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
 
                 {/* Content */}
@@ -207,9 +220,9 @@ export default function HomePage() {
                     </div>
                   )}
                   {/* Date Badge */}
-                  <div className="absolute top-6 right-6 bg-white/90 backdrop-blur-sm px-3.5 py-2 rounded-lg shadow-sm z-3 text-lumen-text-primary font-semibold text-[10px] uppercase tracking-widest">
+                  <Badge className="absolute top-6 right-6 bg-white/90 backdrop-blur-sm px-3.5 py-2 shadow-sm z-3 text-lumen-text-primary font-semibold text-[10px] uppercase tracking-widest rounded-lg">
                     {formatDate(milestone.date).toUpperCase()}
-                  </div>
+                  </Badge>
                 </div>
               </article>
             );
@@ -217,187 +230,164 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* Add/Edit Modal */}
-      <Modal
-        isOpen={showAddModal}
-        onClose={handleCloseModal}
-        title={editingMilestone ? '编辑人生节点' : '新增人生节点'}
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            const newMilestone: Omit<Milestone, 'id'> = {
-              date: new Date(formData.get('date') as string),
-              title: formData.get('title') as string,
-              description: formData.get('description') as string,
-              category: formData.get('category') as Milestone['category'],
-              emotionalYield: (formData.get('emotionalYield') as string).split('、').filter(Boolean),
-              capitalDeployed: Number(formData.get('capitalDeployed')),
-              assetClass: formData.get('assetClass') as Milestone['assetClass'],
-              imageUrl: formData.get('imageUrl') as string || undefined,
-              location: formData.get('location') as string || undefined,
-              status: formData.get('status') as Milestone['status'] || undefined,
-            };
+      {/* Add/Edit Dialog */}
+      <Dialog open={showAddModal} onOpenChange={handleCloseModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingMilestone ? '编辑人生节点' : '新增人生节点'}</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const newMilestone: Omit<Milestone, 'id'> = {
+                date: new Date(formData.get('date') as string),
+                title: formData.get('title') as string,
+                description: formData.get('description') as string,
+                category: formData.get('category') as Milestone['category'],
+                emotionalYield: (formData.get('emotionalYield') as string).split('、').filter(Boolean),
+                capitalDeployed: Number(formData.get('capitalDeployed')),
+                assetClass: formData.get('assetClass') as Milestone['assetClass'],
+                imageUrl: formData.get('imageUrl') as string || undefined,
+                location: formData.get('location') as string || undefined,
+                status: formData.get('status') as Milestone['status'] || undefined,
+              };
 
-            if (editingMilestone) {
-              handleUpdateMilestone({ ...newMilestone, id: editingMilestone.id });
-            } else {
-              handleAddMilestone(newMilestone);
-            }
-          }}
-          className="space-y-4"
-        >
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              日期
-            </label>
-            <input
-              type="date"
-              name="date"
-              defaultValue={editingMilestone ? editingMilestone.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
-              required
-              className="input-field"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              标题
-            </label>
-            <input
-              type="text"
-              name="title"
-              defaultValue={editingMilestone?.title}
-              required
-              placeholder="例如：第一处居所"
-              className="input-field"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              描述
-            </label>
-            <textarea
-              name="description"
-              required
-              rows={3}
-              defaultValue={editingMilestone?.description}
-              placeholder="描述这个人生节点的意义..."
-              className="input-field"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-                类别
-              </label>
-              <select
-                name="category"
+              if (editingMilestone) {
+                handleUpdateMilestone({ ...newMilestone, id: editingMilestone.id });
+              } else {
+                handleAddMilestone(newMilestone);
+              }
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="date">日期</Label>
+              <Input
+                id="date"
+                type="date"
+                name="date"
+                defaultValue={editingMilestone ? editingMilestone.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
                 required
-                defaultValue={editingMilestone?.category}
-                className="input-field"
-              >
-                <option value="foundation">基础建设</option>
-                <option value="experience">人生体验</option>
-                <option value="strategic-asset">战略资产</option>
-                <option value="vision-realized">愿景实现</option>
-                <option value="life-chapter">人生章节</option>
-              </select>
+              />
             </div>
 
-            <div>
-              <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-                资产类别
-              </label>
-              <select
-                name="assetClass"
+            <div className="space-y-2">
+              <Label htmlFor="title">标题</Label>
+              <Input
+                id="title"
+                type="text"
+                name="title"
+                defaultValue={editingMilestone?.title}
                 required
-                defaultValue={editingMilestone?.assetClass}
-                className="input-field"
-              >
-                <option value="tangible-shelter">有形-住房</option>
-                <option value="intangible-experiential">无形-体验</option>
-                <option value="venture-autonomy">创业-自主</option>
-                <option value="venture-investment">创业-投资</option>
-                <option value="real-estate">房地产</option>
-              </select>
+                placeholder="例如：第一处居所"
+              />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              资本配置金额
-            </label>
-            <input
-              type="number"
-              name="capitalDeployed"
-              required
-              defaultValue={editingMilestone?.capitalDeployed}
-              placeholder="0"
-              className="input-field"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">描述</Label>
+              <textarea
+                id="description"
+                name="description"
+                required
+                rows={3}
+                defaultValue={editingMilestone?.description}
+                placeholder="描述这个人生节点的意义..."
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+            </div>
 
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              情感回报（用、分隔）
-            </label>
-            <input
-              type="text"
-              name="emotionalYield"
-              required
-              defaultValue={editingMilestone?.emotionalYield.join('、')}
-              placeholder="例如：稳定性、自由、成长"
-              className="input-field"
-            />
-          </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="category">类别</Label>
+                <Select name="category" required defaultValue={editingMilestone?.category}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择类别" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="foundation">基础建设</SelectItem>
+                    <SelectItem value="experience">人生体验</SelectItem>
+                    <SelectItem value="strategic-asset">战略资产</SelectItem>
+                    <SelectItem value="vision-realized">愿景实现</SelectItem>
+                    <SelectItem value="life-chapter">人生章节</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              位置（可选）
-            </label>
-            <input
-              type="text"
-              name="location"
-              defaultValue={editingMilestone?.location}
-              placeholder="例如：北京市朝阳区"
-              className="input-field"
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="assetClass">资产类别</Label>
+                <Select name="assetClass" required defaultValue={editingMilestone?.assetClass}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择资产类别" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="tangible-shelter">有形-住房</SelectItem>
+                    <SelectItem value="intangible-experiential">无形-体验</SelectItem>
+                    <SelectItem value="venture-autonomy">创业-自主</SelectItem>
+                    <SelectItem value="venture-investment">创业-投资</SelectItem>
+                    <SelectItem value="real-estate">房地产</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-2">
-              图片URL（可选）
-            </label>
-            <input
-              type="url"
-              name="imageUrl"
-              defaultValue={editingMilestone?.imageUrl}
-              placeholder="https://..."
-              className="input-field"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="capitalDeployed">资本配置金额</Label>
+              <Input
+                id="capitalDeployed"
+                type="number"
+                name="capitalDeployed"
+                required
+                defaultValue={editingMilestone?.capitalDeployed}
+                placeholder="0"
+              />
+            </div>
 
-          <div className="flex gap-3 pt-4">
-            <button
-              type="submit"
-              className="btn-primary flex-1"
-            >
-              {editingMilestone ? '保存' : '添加'}
-            </button>
-            <button
-              type="button"
-              onClick={handleCloseModal}
-              className="btn-secondary"
-            >
-              取消
-            </button>
-          </div>
-        </form>
-      </Modal>
+            <div className="space-y-2">
+              <Label htmlFor="emotionalYield">情感回报（用、分隔）</Label>
+              <Input
+                id="emotionalYield"
+                type="text"
+                name="emotionalYield"
+                required
+                defaultValue={editingMilestone?.emotionalYield.join('、')}
+                placeholder="例如：稳定性、自由、成长"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location">位置（可选）</Label>
+              <Input
+                id="location"
+                type="text"
+                name="location"
+                defaultValue={editingMilestone?.location}
+                placeholder="例如：北京市朝阳区"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="imageUrl">图片URL（可选）</Label>
+              <Input
+                id="imageUrl"
+                type="url"
+                name="imageUrl"
+                defaultValue={editingMilestone?.imageUrl}
+                placeholder="https://..."
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button type="submit" variant="warm" className="flex-1">
+                {editingMilestone ? '保存' : '添加'}
+              </Button>
+              <Button type="button" variant="secondary" onClick={handleCloseModal}>
+                取消
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
