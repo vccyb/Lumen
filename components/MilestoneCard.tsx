@@ -80,10 +80,10 @@ export function MilestoneCard({ milestone, index, onEdit, onDelete }: MilestoneC
       ref={elementRef}
       className={`scroll-animate grid grid-cols-2 gap-20 p-15 relative z-1 group
         bg-lumen-surface rounded-2xl shadow-glow transition-transform duration-300 hover:scale-[1.01]
-        ${isEven ? 'order-2' : 'order-1'} ${isVisible ? 'is-visible' : ''}`}
+        ${isVisible ? 'is-visible' : ''}`}
     >
       {/* Edit/Delete Buttons */}
-      <div className={`absolute top-6 ${isEven ? 'left-6' : 'right-6'} flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
+      <div className={`absolute top-6 ${isEven ? 'left-6' : 'right-6'} z-10 flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity`}>
         <Button
           variant="ghost"
           size="icon"
@@ -104,10 +104,6 @@ export function MilestoneCard({ milestone, index, onEdit, onDelete }: MilestoneC
 
       {/* Content */}
       <div className={`flex flex-col justify-center max-w-[400px] ${isEven ? 'order-1 items-end text-right' : 'order-2'}`}>
-        <div className="text-base font-semibold text-lumen-text-tertiary mb-3">
-          {String(index + 1).padStart(2, '0')}.
-        </div>
-
         <h2 className="text-[42px] leading-tight mb-6 text-lumen-text-primary tracking-tight">
           {milestone.title}
         </h2>

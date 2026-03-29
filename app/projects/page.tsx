@@ -31,6 +31,49 @@ import { ExternalLink, Github, Pencil, Trash2, Plus, Clock, DollarSign, Star, Za
 
 type FilterStatus = 'all' | Project['status'];
 
+const toNumber = (value: unknown): number | undefined => {
+  if (value === null || value === undefined) return undefined;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : undefined;
+};
+
+const parseOptionalNumberFromForm = (value: FormDataEntryValue | null): number | undefined => {
+  if (value === null) return undefined;
+  const text = String(value).trim();
+  if (text === '') return undefined;
+  const numeric = Number(text);
+  return Number.isFinite(numeric) ? numeric : undefined;
+};
+
+const parseProjectMilestones = (value: unknown): ProjectMilestone[] => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+    .map((item) => {
+      const type = item.type as ProjectMilestone['type'];
+      return {
+        id: String(item.id ?? crypto.randomUUID()),
+        date: new Date(String(item.date ?? new Date().toISOString())),
+        title: String(item.title ?? '未命名里程碑'),
+        description: item.description ? String(item.description) : undefined,
+        type: type === 'release' || type === 'feature' || type === 'achievement' || type === 'learning' ? type : 'feature',
+        link: item.link ? String(item.link) : undefined,
+      };
+    });
+};
+
+const serializeProjectMilestones = (milestones: ProjectMilestone[]) => {
+  return milestones.map((milestone) => ({
+    id: milestone.id,
+    date: new Date(milestone.date).toISOString(),
+    title: milestone.title,
+    description: milestone.description ?? null,
+    type: milestone.type,
+    link: milestone.link ?? null,
+  }));
+};
+
 export default function ProjectsPage() {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
@@ -41,6 +84,35 @@ export default function ProjectsPage() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
 
+  const selectedProjectMetrics = selectedProject
+    ? [
+        selectedProject.estimatedHoursInvested
+          ? {
+              key: 'hours',
+              label: '投入时间',
+              value: `${selectedProject.estimatedHoursInvested}h`,
+              icon: <Clock className="w-3 h-3" />,
+            }
+          : null,
+        selectedProject.monthlyCost !== undefined && selectedProject.monthlyCost > 0
+          ? {
+              key: 'cost',
+              label: '月度成本',
+              value: formatCurrency(selectedProject.monthlyCost),
+              icon: <DollarSign className="w-3 h-3" />,
+            }
+          : null,
+        selectedProject.progress !== undefined
+          ? {
+              key: 'progress',
+              label: '进度',
+              value: `${selectedProject.progress}%`,
+              icon: null,
+            }
+          : null,
+      ].filter(Boolean) as Array<{ key: string; label: string; value: string; icon: JSX.Element | null }>
+    : [];
+
   // Load projects from API
   const loadProjects = async () => {
     try {
@@ -48,12 +120,34 @@ export default function ProjectsPage() {
       setError(null);
       const data = await projectAPI.getAll();
 
-      // Convert date strings to Date objects
-      const projects = (data as unknown as Project[]).map(p => ({
-        ...p,
-        startDate: new Date(p.startDate),
-        lastUpdated: new Date(p.lastUpdated),
-      }));
+      const projects = data
+        .map((project) => {
+          const parsedMilestones = parseProjectMilestones(project.milestones);
+
+          return {
+            id: project.id,
+            name: project.name,
+            description: project.description,
+            longDescription: project.long_description ?? undefined,
+            status: project.status,
+            category: project.category,
+            coverImage: project.cover_image ?? undefined,
+            techStack: Array.isArray(project.tech_stack) ? project.tech_stack : [],
+            links: [],
+            startDate: new Date(project.start_date),
+            lastUpdated: new Date(project.last_updated),
+            progress: toNumber(project.progress),
+            milestones: parsedMilestones,
+            learnings: [],
+            emotionalYield: [],
+            estimatedHoursInvested: toNumber(project.estimated_hours_invested),
+            monthlyCost: toNumber(project.monthly_cost),
+            featured: Boolean(project.featured),
+            createdAt: new Date(project.created_at),
+            updatedAt: new Date(project.updated_at),
+          } as Project;
+        })
+        .sort((a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime());
 
       setProjects(projects || []);
     } catch (err) {
@@ -116,9 +210,11 @@ export default function ProjectsPage() {
         cover_image: data.coverImage || null,
         start_date: data.startDate.toISOString().split('T')[0],
         last_updated: data.lastUpdated.toISOString().split('T')[0],
-        progress: data.progress || null,
-        estimated_hours_invested: data.estimatedHoursInvested || null,
-        monthly_cost: data.monthlyCost || null,
+        progress: data.progress ?? null,
+        estimated_hours_invested: data.estimatedHoursInvested ?? null,
+        monthly_cost: data.monthlyCost ?? null,
+        tech_stack: data.techStack || [],
+        milestones: serializeProjectMilestones(data.milestones || []),
         featured: data.featured || false,
       };
 
@@ -142,9 +238,11 @@ export default function ProjectsPage() {
         cover_image: updated.coverImage || null,
         start_date: updated.startDate.toISOString().split('T')[0],
         last_updated: updated.lastUpdated.toISOString().split('T')[0],
-        progress: updated.progress || null,
-        estimated_hours_invested: updated.estimatedHoursInvested || null,
-        monthly_cost: updated.monthlyCost || null,
+        progress: updated.progress ?? null,
+        estimated_hours_invested: updated.estimatedHoursInvested ?? null,
+        monthly_cost: updated.monthlyCost ?? null,
+        tech_stack: updated.techStack || [],
+        milestones: serializeProjectMilestones(updated.milestones || []),
         featured: updated.featured || false,
       };
 
@@ -209,7 +307,7 @@ export default function ProjectsPage() {
           </p>
 
           {loading && (
-            <div className="flex items-center gap-2 text-lumen-text-secondary mt-8">
+            <div className="mt-10 flex items-center justify-center gap-2 rounded-xl border border-lumen-border-subtle bg-lumen-bg-system/60 py-6 text-lumen-text-secondary">
               <Loader2 className="w-4 h-4 animate-spin" />
               加载中...
             </div>
@@ -486,21 +584,22 @@ export default function ProjectsPage() {
                 {selectedProject.longDescription || selectedProject.description}
               </p>
 
-              {/* External Links */}
-              <div className="flex flex-wrap gap-2 mb-6">
-                {(selectedProject.links || []).map(link => (
-                  <a
-                    key={link.label}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-lumen-bg-system text-sm text-lumen-text-secondary hover:text-lumen-text-primary hover:bg-white transition-all"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    {link.label}
-                  </a>
-                ))}
-              </div>
+              {(selectedProject.links || []).length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {(selectedProject.links || []).map(link => (
+                    <a
+                      key={link.label}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-lumen-bg-system text-sm text-lumen-text-secondary hover:text-lumen-text-primary hover:bg-white transition-all"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      {link.label}
+                    </a>
+                  ))}
+                </div>
+              )}
 
               {/* Tech Stack */}
               <div className="mb-6">
@@ -508,52 +607,46 @@ export default function ProjectsPage() {
                   技术栈
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {(selectedProject.techStack || []).map(tech => (
-                    <Badge key={tech} variant="secondary" className="rounded-full text-xs">
-                      {tech}
-                    </Badge>
-                  ))}
+                  {(selectedProject.techStack || []).length > 0 ? (
+                    (selectedProject.techStack || []).map(tech => (
+                      <Badge key={tech} variant="secondary" className="rounded-full text-xs">
+                        {tech}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm text-lumen-text-secondary">暂未填写技术栈</span>
+                  )}
                 </div>
               </div>
 
               {/* Key Metrics */}
-              <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-lumen-bg-system rounded-xl">
-                {selectedProject.estimatedHoursInvested && (
-                  <div>
-                    <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-1">
-                      <Clock className="w-3 h-3" /> 投入时间
+              {selectedProjectMetrics.length > 0 && (
+                <div className={`grid gap-4 mb-6 p-4 bg-lumen-bg-system rounded-xl ${selectedProjectMetrics.length === 1 ? 'grid-cols-1' : selectedProjectMetrics.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                  {selectedProjectMetrics.map((metric) => (
+                    <div key={metric.key}>
+                      <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-1">
+                        {metric.icon}
+                        {metric.label}
+                      </div>
+                      <div className="text-lg font-semibold text-lumen-text-primary">{metric.value}</div>
+                      {metric.key === 'progress' && selectedProject.progress !== undefined && (
+                        <div className="mt-2">
+                          <Progress value={selectedProject.progress} size="sm" color={selectedProject.progress >= 75 ? 'green' : 'gold'} />
+                        </div>
+                      )}
                     </div>
-                    <div className="text-lg font-semibold text-lumen-text-primary">{selectedProject.estimatedHoursInvested}h</div>
-                  </div>
-                )}
-                {selectedProject.monthlyCost !== undefined && selectedProject.monthlyCost > 0 && (
-                  <div>
-                    <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-1">
-                      <DollarSign className="w-3 h-3" /> 月度成本
-                    </div>
-                    <div className="text-lg font-semibold text-lumen-text-primary">{formatCurrency(selectedProject.monthlyCost)}</div>
-                  </div>
-                )}
-                {selectedProject.progress !== undefined && (
-                  <div>
-                    <div className="text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-1">
-                      进度
-                    </div>
-                    <div className="mt-1">
-                      <Progress value={selectedProject.progress} size="sm" color={selectedProject.progress >= 75 ? 'green' : 'gold'} />
-                    </div>
-                  </div>
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
 
               {/* Milestones Timeline */}
-              {selectedProject.milestones.length > 0 && (
+              {(selectedProject.milestones?.length || 0) > 0 && (
                 <div className="mb-6">
                   <div className="text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold mb-4">
                     里程碑
                   </div>
                   <div className="space-y-0">
-                    {selectedProject.milestones
+                    {(selectedProject.milestones || [])
                       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                       .map((ms, index) => (
                         <div key={ms.id} className="flex gap-4 pb-4">
@@ -561,7 +654,7 @@ export default function ProjectsPage() {
                             <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white ${getStatusColor(ms.type === 'release' ? 'active' : ms.type === 'achievement' ? 'active' : 'in-progress')}`}>
                               {getMilestoneIcon(ms.type)}
                             </div>
-                            {index < selectedProject.milestones.length - 1 && (
+                            {index < (selectedProject.milestones || []).length - 1 && (
                               <div className="w-px flex-1 bg-lumen-border-subtle mt-1" />
                             )}
                           </div>
@@ -652,12 +745,12 @@ export default function ProjectsPage() {
                 links,
                 startDate: formData.get('startDate') ? new Date(formData.get('startDate') as string) : new Date(),
                 lastUpdated: new Date(),
-                progress: Number(formData.get('progress') || 0) || undefined,
+                progress: parseOptionalNumberFromForm(formData.get('progress')),
                 milestones: editingProject?.milestones || [],
                 learnings: editingProject?.learnings,
                 emotionalYield: editingProject?.emotionalYield,
-                estimatedHoursInvested: Number(formData.get('estimatedHours') || 0) || undefined,
-                monthlyCost: Number(formData.get('monthlyCost') || 0) || undefined,
+                estimatedHoursInvested: parseOptionalNumberFromForm(formData.get('estimatedHours')),
+                monthlyCost: parseOptionalNumberFromForm(formData.get('monthlyCost')),
                 featured: !!formData.get('featured'),
                 createdAt: editingProject?.createdAt || new Date(),
                 updatedAt: new Date(),
@@ -721,24 +814,24 @@ export default function ProjectsPage() {
 
             <div className="space-y-2">
               <Label htmlFor="techStack">技术栈（用逗号分隔）</Label>
-              <Input type="text" name="techStack" defaultValue={editingProject?.techStack.join(', ')} placeholder="Next.js, TypeScript, PostgreSQL" />
+              <Input type="text" name="techStack" defaultValue={editingProject?.techStack?.join(', ')} placeholder="Next.js, TypeScript, PostgreSQL" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="githubUrl">GitHub URL</Label>
-                <Input type="url" name="githubUrl" defaultValue={editingProject?.links.find(l => l.label === 'GitHub')?.url} placeholder="https://github.com/..." />
+                <Input type="url" name="githubUrl" defaultValue={editingProject?.links?.find(l => l.label === 'GitHub')?.url} placeholder="https://github.com/..." />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="demoUrl">Demo URL（可选）</Label>
-                <Input type="url" name="demoUrl" defaultValue={editingProject?.links.find(l => l.label === 'Live Demo')?.url} placeholder="https://..." />
+                <Input type="url" name="demoUrl" defaultValue={editingProject?.links?.find(l => l.label === 'Live Demo')?.url} placeholder="https://..." />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="startDate">开始日期</Label>
-                <Input type="date" name="startDate" defaultValue={editingProject?.startDate.toISOString().split('T')[0]} />
+                <Input type="date" name="startDate" defaultValue={editingProject?.startDate?.toISOString().split('T')[0]} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="progress">进度 (%)</Label>

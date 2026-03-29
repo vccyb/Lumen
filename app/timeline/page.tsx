@@ -25,6 +25,11 @@ import {
 import { Loader2 } from 'lucide-react';
 import { MilestoneCard } from '@/components/MilestoneCard';
 
+const toNumber = (value: unknown): number => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+};
+
 export default function HomePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -50,11 +55,23 @@ export default function HomePage() {
       setError(null);
       const data = await milestoneAPI.getAll();
 
-      // Convert date strings to Date objects for form handling
-      const milestones = (data as unknown as Milestone[]).map(m => ({
-        ...m,
-        date: new Date(m.date),
-      }));
+      const milestones = data
+        .map((milestone) => ({
+          id: milestone.id,
+          date: new Date(milestone.date),
+          title: milestone.title,
+          description: milestone.description,
+          category: milestone.category,
+          emotionalYield: Array.isArray(milestone.emotional_yield) ? milestone.emotional_yield : [],
+          capitalDeployed: toNumber(milestone.capital_deployed),
+          assetClass: milestone.asset_class,
+          imageUrl: milestone.image_url ?? undefined,
+          location: milestone.location ?? undefined,
+          status: milestone.status ?? undefined,
+          createdAt: new Date(milestone.created_at),
+          updatedAt: new Date(milestone.updated_at),
+        } as Milestone))
+        .sort((a, b) => b.date.getTime() - a.date.getTime());
 
       setMilestones(milestones);
     } catch (err) {
@@ -166,7 +183,7 @@ export default function HomePage() {
 
           {/* Loading State */}
           {loading && (
-            <div className="flex items-center gap-2 text-lumen-text-secondary mt-8">
+            <div className="mt-10 flex items-center justify-center gap-2 rounded-xl border border-lumen-border-subtle bg-lumen-bg-system/60 py-6 text-lumen-text-secondary">
               <Loader2 className="w-4 h-4 animate-spin" />
               加载中...
             </div>

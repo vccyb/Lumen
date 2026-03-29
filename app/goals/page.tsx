@@ -27,6 +27,11 @@ import {
 import Progress from '@/components/ui/Progress';
 import { Pencil, Trash2, Loader2 } from 'lucide-react';
 
+const toNumber = (value: unknown): number => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+};
+
 export default function GoalsPage() {
   const { user } = useAuth();
   const [goals, setGoals] = useState<LifeGoal[]>([]);
@@ -42,11 +47,26 @@ export default function GoalsPage() {
       setError(null);
       const data = await lifeGoalAPI.getAll();
 
-      // Convert date strings to Date objects (targetDate can be null)
-      const goals = (data as unknown as LifeGoal[]).map(g => ({
-        ...g,
-        targetDate: g.targetDate ? new Date(g.targetDate) : null,
-      }));
+      const goals = data
+        .map((goal) => ({
+          id: goal.id,
+          title: goal.title,
+          description: goal.description,
+          category: goal.category,
+          targetDate: goal.target_date ? new Date(goal.target_date) : undefined,
+          progress: toNumber(goal.progress),
+          estimatedCost: toNumber(goal.estimated_cost),
+          milestones: Array.isArray(goal.milestones) ? goal.milestones : [],
+          status: goal.status,
+          priority: goal.priority ?? undefined,
+          createdAt: new Date(goal.created_at),
+          updatedAt: new Date(goal.updated_at),
+        } as LifeGoal))
+        .sort((a, b) => {
+          const aTime = a.targetDate ? a.targetDate.getTime() : a.createdAt.getTime();
+          const bTime = b.targetDate ? b.targetDate.getTime() : b.createdAt.getTime();
+          return bTime - aTime;
+        });
 
       setGoals(goals);
     } catch (err) {
@@ -187,7 +207,7 @@ export default function GoalsPage() {
           </p>
 
           {loading && (
-            <div className="flex items-center gap-2 text-lumen-text-secondary mt-8">
+            <div className="mt-10 flex items-center justify-center gap-2 rounded-xl border border-lumen-border-subtle bg-lumen-bg-system/60 py-6 text-lumen-text-secondary">
               <Loader2 className="w-4 h-4 animate-spin" />
               加载中...
             </div>
@@ -209,7 +229,7 @@ export default function GoalsPage() {
             {goals.map((goal) => (
               <Card key={goal.id} className="p-8 relative group">
                 {/* Edit/Delete Buttons */}
-                <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-6 right-6 z-10 flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                   <Button
                     variant="ghost"
                     size="icon"

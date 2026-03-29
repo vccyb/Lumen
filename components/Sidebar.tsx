@@ -54,33 +54,31 @@ export default function Sidebar() {
       {/* User Section */}
       <div className="border-t border-lumen-border-subtle pt-6">
         {user ? (
-          <>
-            {/* Logged in */}
-            <div className="mb-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-lumen-accent-gold/20 flex items-center justify-center">
-                  <User className="w-5 h-5 text-lumen-accent-gold" />
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-lumen-accent-gold/20 flex items-center justify-center">
+                <User className="w-5 h-5 text-lumen-accent-gold" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-lumen-text-primary truncate">
+                  {user.user_metadata?.name || user.email?.split('@')[0]}
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-lumen-text-primary">
-                    {user.user_metadata?.name || user.email?.split('@')[0]}
-                  </div>
-                  <div className="text-xs text-lumen-text-tertiary truncate max-w-[180px]">
-                    {user.email}
-                  </div>
+                <div className="text-xs text-lumen-text-tertiary truncate max-w-[160px]">
+                  {user.email}
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => signOut()}
-                className="w-full justify-start text-lumen-text-secondary hover:text-lumen-text-primary"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                登出
-              </Button>
             </div>
-          </>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => signOut()}
+              className="h-9 w-9 shrink-0 text-lumen-text-secondary hover:text-lumen-text-primary"
+              aria-label="登出"
+              title="登出"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
         ) : (
           <>
             {/* Not logged in */}

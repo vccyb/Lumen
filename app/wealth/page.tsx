@@ -41,6 +41,15 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
+const toNumber = (value: unknown): number => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+};
+
+const calculateTotalAssets = (breakdown: WealthRecord['breakdown']): number => (
+  breakdown.liquid + breakdown.equities + breakdown.realEstate + breakdown.other
+);
+
 export default function WealthPage() {
   const { user } = useAuth();
   const [records, setRecords] = useState<WealthRecord[]>([]);
@@ -59,11 +68,25 @@ export default function WealthPage() {
       setError(null);
       const data = await wealthRecordAPI.getAll();
 
-      // Convert date strings to Date objects
-      const records = (data as unknown as WealthRecord[]).map(r => ({
-        ...r,
-        date: new Date(r.date),
-      }));
+      const records = data
+        .map((record) => {
+          const breakdown = (record.breakdown ?? {}) as Record<string, unknown>;
+          return {
+            id: record.id,
+            date: new Date(record.date),
+            changeAmount: toNumber(record.change_amount),
+            changeReason: record.change_reason,
+            breakdown: {
+              liquid: toNumber(breakdown.liquid),
+              equities: toNumber(breakdown.equities),
+              realEstate: toNumber(breakdown.realEstate ?? breakdown.real_estate),
+              other: toNumber(breakdown.other),
+            },
+            createdAt: new Date(record.created_at),
+            updatedAt: new Date(record.updated_at),
+          } as WealthRecord;
+        })
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
 
       setRecords(records);
     } catch (err) {
@@ -94,12 +117,14 @@ export default function WealthPage() {
   }));
 
   // 筛选记录
-  const filteredRecords = records.filter(record => {
-    if (filterCategory === 'all') return true;
-    if (filterCategory === 'positive') return record.changeAmount > 0;
-    if (filterCategory === 'negative') return record.changeAmount < 0;
-    return true;
-  });
+  const filteredRecords = records
+    .filter(record => {
+      if (filterCategory === 'all') return true;
+      if (filterCategory === 'positive') return record.changeAmount > 0;
+      if (filterCategory === 'negative') return record.changeAmount < 0;
+      return true;
+    })
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
 
   // 添加月份记录
   const handleAddMonth = async () => {
@@ -111,32 +136,46 @@ export default function WealthPage() {
     const lastRecord = records[records.length - 1];
     if (!lastRecord) return;
 
-    const lastRecordWithTotal = getWealthRecordWithTotal(lastRecord);
     const newDate = new Date(lastRecord.date);
     newDate.setMonth(newDate.getMonth() + 1);
 
     const newRecordData = {
       user_id: user.id,
-      date: newDate.toISOString(),
+      date: newDate.toISOString().split('T')[0],
       change_amount: 30000,
       change_reason: '月度记录 - 待编辑',
       breakdown: {
         liquid: lastRecord.breakdown.liquid + 5000,
         equities: lastRecord.breakdown.equities + 15000,
-        real_estate: lastRecord.breakdown.realEstate + 10000,
+        realEstate: lastRecord.breakdown.realEstate + 10000,
         other: lastRecord.breakdown.other + 0,
       },
+      total_assets: calculateTotalAssets({
+        liquid: lastRecord.breakdown.liquid + 5000,
+        equities: lastRecord.breakdown.equities + 15000,
+        realEstate: lastRecord.breakdown.realEstate + 10000,
+        other: lastRecord.breakdown.other + 0,
+      }),
     };
 
     try {
       const created = await wealthRecordAPI.create(newRecordData);
       await loadRecords();
+      const breakdown = (created.breakdown ?? {}) as Record<string, unknown>;
       const newRecord = {
-        ...created,
+        id: created.id,
         date: new Date(created.date),
+        changeAmount: toNumber(created.change_amount),
+        changeReason: created.change_reason,
+        breakdown: {
+          liquid: toNumber(breakdown.liquid),
+          equities: toNumber(breakdown.equities),
+          realEstate: toNumber(breakdown.realEstate ?? breakdown.real_estate),
+          other: toNumber(breakdown.other),
+        },
         createdAt: new Date(created.created_at),
         updatedAt: new Date(created.updated_at),
-      } as unknown as WealthRecord;
+      } as WealthRecord;
       setEditingRecord(newRecord);
       setShowAddModal(true);
     } catch (err) {
@@ -156,9 +195,9 @@ export default function WealthPage() {
       const recordData = {
         user_id: user.id,
         date: newRecord.date.toISOString().split('T')[0],
-        total_assets: newRecord.totalAssets,
         change_amount: newRecord.changeAmount,
         change_reason: newRecord.changeReason,
+        total_assets: calculateTotalAssets(newRecord.breakdown),
         breakdown: {
           liquid: newRecord.breakdown.liquid,
           equities: newRecord.breakdown.equities,
@@ -181,9 +220,9 @@ export default function WealthPage() {
     try {
       const recordData = {
         date: updatedRecord.date.toISOString().split('T')[0],
-        total_assets: updatedRecord.totalAssets,
         change_amount: updatedRecord.changeAmount,
         change_reason: updatedRecord.changeReason,
+        total_assets: calculateTotalAssets(updatedRecord.breakdown),
         breakdown: {
           liquid: updatedRecord.breakdown.liquid,
           equities: updatedRecord.breakdown.equities,
@@ -267,7 +306,7 @@ export default function WealthPage() {
             </p>
 
             {loading && (
-              <div className="flex items-center gap-2 text-lumen-text-secondary mt-8">
+              <div className="mt-10 flex items-center justify-center gap-2 rounded-xl border border-lumen-border-subtle bg-lumen-bg-system/60 py-6 text-lumen-text-secondary">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 加载中...
               </div>
@@ -337,14 +376,16 @@ export default function WealthPage() {
           {/* Records List */}
           <section className="px-24 pb-40 max-w-[1100px] mx-auto">
             <div className="space-y-6">
-              {filteredRecords.map((record, index) => {
+              {filteredRecords.map((record) => {
                 const changeRate = calculateChangeRate(record);
                 const isPositive = changeRate >= 0;
+                const historicalIndex = records.findIndex(r => r.id === record.id);
+                const hasHistoricalRecord = historicalIndex > 0;
 
                 return (
                   <Card key={record.id} className="hover:shadow-elevated transition-all relative group">
                     {/* Edit/Delete Buttons */}
-                    <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-6 right-6 z-10 flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -376,7 +417,7 @@ export default function WealthPage() {
                         </div>
 
                         {/* Change Badge */}
-                        {index > 0 && (
+                        {hasHistoricalRecord && (
                           <div className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
                             isPositive ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'
                           }`}>
