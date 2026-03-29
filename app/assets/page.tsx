@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
-import { sampleWealthRecords, formatCurrency } from '@/lib/data';
+import { sampleWealthRecords, formatCurrency, getWealthRecordWithTotal } from '@/lib/data';
 import { WealthRecord } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,9 +22,10 @@ export default function AssetsPage() {
   const [editingRecord, setEditingRecord] = useState<WealthRecord | null>(null);
 
   const currentWealth = records[records.length - 1];
+  const currentWealthWithTotal = getWealthRecordWithTotal(currentWealth);
 
   const assets = [
-    { name: '流动资金', value: currentWealth.breakdown.liquidCapital, category: 'liquid', icon: '💵', description: '现金、银行存款、货币基金' },
+    { name: '流动资金', value: currentWealth.breakdown.liquid, category: 'liquid', icon: '💵', description: '现金、银行存款、货币基金' },
     { name: '股票与指数基金', value: currentWealth.breakdown.equities, category: 'equities', icon: '📈', description: 'ETF、个股、指数基金' },
     { name: '房地产', value: currentWealth.breakdown.realEstate, category: 'real-estate', icon: '🏠', description: '自住房产、投资房产' },
     { name: '其他资产', value: currentWealth.breakdown.other, category: 'other', icon: '💎', description: '数字资产、收藏品、私人投资等' },
@@ -92,7 +93,7 @@ export default function AssetsPage() {
                   总资产价值
                 </div>
                 <div className="text-5xl font-bold tracking-tight text-lumen-text-primary">
-                  {formatCurrency(currentWealth.totalAssets)}
+                  {formatCurrency(currentWealthWithTotal.totalAssets)}
                 </div>
               </div>
               <div className="text-right">
@@ -108,7 +109,7 @@ export default function AssetsPage() {
             {/* Allocation Chart Placeholder */}
             <div className="h-2 bg-lumen-bg-system rounded-full overflow-hidden flex">
               {assets.map((asset) => {
-                const percentage = (asset.value / currentWealth.totalAssets) * 100;
+                const percentage = (asset.value / currentWealthWithTotal.totalAssets) * 100;
                 return (
                   <div
                     key={asset.name}
@@ -123,7 +124,7 @@ export default function AssetsPage() {
             {/* Legend */}
             <div className="flex flex-wrap gap-4 mt-4">
               {assets.map((asset) => {
-                const percentage = (asset.value / currentWealth.totalAssets) * 100;
+                const percentage = (asset.value / currentWealthWithTotal.totalAssets) * 100;
                 return (
                   <div key={asset.name} className="flex items-center gap-2">
                     <div className={`w-3 h-3 rounded-full ${getCategoryColor(asset.category)}`} />
@@ -141,7 +142,7 @@ export default function AssetsPage() {
         <section className="px-24 pb-40 max-w-[1100px] mx-auto">
           <div className="grid grid-cols-2 gap-6">
             {assets.map((asset) => {
-              const percentage = ((asset.value / currentWealth.totalAssets) * 100).toFixed(1);
+              const percentage = ((asset.value / currentWealthWithTotal.totalAssets) * 100).toFixed(1);
               return (
                 <Card key={asset.name} className="p-6">
                   {/* Header */}
@@ -196,36 +197,26 @@ export default function AssetsPage() {
               const formData = new FormData(e.currentTarget);
               const updatedRecord: WealthRecord = {
                 ...editingRecord!,
-                totalAssets: Number(formData.get('totalAssets')),
                 breakdown: {
-                  liquidCapital: Number(formData.get('liquidCapital')),
+                  liquid: Number(formData.get('liquid')),
                   equities: Number(formData.get('equities')),
                   realEstate: Number(formData.get('realEstate')),
                   other: Number(formData.get('other')),
                 },
+                createdAt: editingRecord!.createdAt,
+                updatedAt: new Date(),
               };
               handleUpdateAssets(updatedRecord);
             }}
             className="space-y-4"
           >
             <div className="space-y-2">
-              <Label htmlFor="totalAssets">总资产</Label>
+              <Label htmlFor="liquid">流动资金</Label>
               <Input
-                id="totalAssets"
+                id="liquid"
                 type="number"
-                name="totalAssets"
-                defaultValue={editingRecord?.totalAssets}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="liquidCapital">流动资金</Label>
-              <Input
-                id="liquidCapital"
-                type="number"
-                name="liquidCapital"
-                defaultValue={editingRecord?.breakdown.liquidCapital}
+                name="liquid"
+                defaultValue={editingRecord?.breakdown.liquid}
                 required
               />
             </div>

@@ -80,3 +80,52 @@ No global state library. Each page manages its own state with React `useState`. 
 - Components use TypeScript strict typing for all props
 - Client components are marked with `'use client'` directive
 - External images come from Unsplash/Pexels (domains configured in `next.config.js`)
+
+---
+
+## 📋 Project Rules
+
+All project rules are defined in `.claude/rules/` directory and loaded automatically at session start.
+
+### 🚨 Critical Rules
+- **Code Review**: `.claude/rules/code-review-rules.md` - Mandatory review before merging
+- **Security**: `.claude/rules/security.md` - Secrets management, input validation, RLS policies
+- **Database Schema**: `.claude/rules/database-schema.md` - Migration files, type generation
+- **API Architecture**: `.claude/rules/api-architecture.md` - BaseAPI pattern, shared client
+- **Documentation**: `.claude/rules/documentation.md` - External system integration docs
+- **Testing**: `.claude/rules/testing.md` - Test requirements and standards
+
+### Quick Reference
+
+#### Code Changes
+```bash
+# Before committing
+npm run lint
+npm run build
+npm test
+
+# Review your changes
+/simplify
+```
+
+#### API Development
+- ✅ Extend `BaseAPI` class
+- ✅ Use shared Supabase client (`lib/supabase/shared-client.ts`)
+- ❌ Don't create own Supabase client instances
+
+#### Database Changes
+- ✅ Create migration file in `supabase/migrations/`
+- ✅ Apply: `supabase db push`
+- ✅ Generate types: `supabase gen types typescript --local > lib/database.types.ts`
+
+#### External Systems
+- ✅ Create guide in `guides/` directory
+- ✅ Follow documentation template in `.claude/rules/documentation.md`
+
+#### Security
+- ❌ Never commit secrets or API keys
+- ✅ Use `.env.local` for environment variables
+- ✅ Enable RLS on all Supabase tables
+- ✅ Validate all user input
+
+---

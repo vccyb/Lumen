@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
-import { sampleLifeGoals, formatCurrency } from '@/lib/data';
+import { formatCurrency } from '@/lib/data';
 import { LifeGoal } from '@/types';
+import { lifeGoalAPI } from '@/lib/api/goals';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,12 +25,41 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import Progress from '@/components/ui/Progress';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Loader2 } from 'lucide-react';
 
 export default function GoalsPage() {
-  const [goals, setGoals] = useState(sampleLifeGoals);
+  const { user } = useAuth();
+  const [goals, setGoals] = useState<LifeGoal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<LifeGoal | null>(null);
+
+  // Load goals from API
+  const loadGoals = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await lifeGoalAPI.getAll();
+
+      // Convert date strings to Date objects (targetDate can be null)
+      const goals = (data as unknown as LifeGoal[]).map(g => ({
+        ...g,
+        targetDate: g.targetDate ? new Date(g.targetDate) : null,
+      }));
+
+      setGoals(goals);
+    } catch (err) {
+      console.error('Failed to load goals:', err);
+      setError('加载目标失败，请检查网络连接');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadGoals();
+  }, []);
 
   const getStatusLabel = (status: LifeGoal['status']) => {
     const labels = {
@@ -61,24 +92,66 @@ export default function GoalsPage() {
     return labels[category];
   };
 
-  const handleAddGoal = (newGoal: Omit<LifeGoal, 'id'>) => {
-    const goal: LifeGoal = {
-      ...newGoal,
-      id: Date.now().toString(),
-    };
-    setGoals([...goals, goal]);
-    setShowAddModal(false);
+  const handleAddGoal = async (newGoal: Omit<LifeGoal, 'id'>) => {
+    if (!user) {
+      alert('请先登录');
+      return;
+    }
+
+    try {
+      const goalData = {
+        user_id: user.id,
+        title: newGoal.title,
+        description: newGoal.description,
+        category: newGoal.category,
+        target_date: newGoal.targetDate ? newGoal.targetDate.toISOString().split('T')[0] : null,
+        progress: newGoal.progress,
+        estimated_cost: newGoal.estimatedCost,
+        status: newGoal.status,
+        priority: newGoal.priority || 'medium',
+      };
+
+      await lifeGoalAPI.create(goalData);
+      await loadGoals();
+      setShowAddModal(false);
+    } catch (err) {
+      console.error('Failed to create goal:', err);
+      alert('创建失败，请重试');
+    }
   };
 
-  const handleUpdateGoal = (updatedGoal: LifeGoal) => {
-    setGoals(goals.map(g => g.id === updatedGoal.id ? updatedGoal : g));
-    setEditingGoal(null);
-    setShowAddModal(false);
+  const handleUpdateGoal = async (updatedGoal: LifeGoal) => {
+    try {
+      const goalData = {
+        title: updatedGoal.title,
+        description: updatedGoal.description,
+        category: updatedGoal.category,
+        target_date: updatedGoal.targetDate ? updatedGoal.targetDate.toISOString().split('T')[0] : null,
+        progress: updatedGoal.progress,
+        estimated_cost: updatedGoal.estimatedCost,
+        status: updatedGoal.status,
+        priority: updatedGoal.priority || 'medium',
+      };
+
+      await lifeGoalAPI.update(updatedGoal.id, goalData);
+      await loadGoals();
+      setEditingGoal(null);
+      setShowAddModal(false);
+    } catch (err) {
+      console.error('Failed to update goal:', err);
+      alert('更新失败，请重试');
+    }
   };
 
-  const handleDeleteGoal = (id: string) => {
+  const handleDeleteGoal = async (id: string) => {
     if (confirm('确定要删除这个目标吗？')) {
-      setGoals(goals.filter(g => g.id !== id));
+      try {
+        await lifeGoalAPI.delete(id);
+        await loadGoals();
+      } catch (err) {
+        console.error('Failed to delete goal:', err);
+        alert('删除失败，请重试');
+      }
     }
   };
 
@@ -112,6 +185,22 @@ export default function GoalsPage() {
           <p className="text-base text-lumen-text-secondary max-w-[480px] leading-relaxed">
             设定人生目标，追踪进度，将梦想与资本配置联系起来。每一个目标都是一个需要精心规划的投资组合。
           </p>
+
+          {loading && (
+            <div className="flex items-center gap-2 text-lumen-text-secondary mt-8">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              加载中...
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mt-8">
+              {error}
+              <Button variant="link" onClick={loadGoals} className="ml-2">
+                重试
+              </Button>
+            </div>
+          )}
         </section>
 
         {/* Goals Grid */}
@@ -191,7 +280,7 @@ export default function GoalsPage() {
                         {formatCurrency(goal.estimatedCost)}
                       </span>
                     </div>
-                    {goal.milestones.length > 0 && (
+                    {goal.milestones?.length > 0 && (
                       <div className="flex justify-between items-baseline">
                         <span className="text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold">
                           关联节点
@@ -230,6 +319,8 @@ export default function GoalsPage() {
                 estimatedCost: Number(formData.get('estimatedCost')),
                 milestones: [],
                 status: editingGoal?.status || 'dreaming',
+                createdAt: editingGoal?.createdAt || new Date(),
+                updatedAt: new Date(),
               };
 
               if (editingGoal) {

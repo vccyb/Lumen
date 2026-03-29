@@ -1,4 +1,7 @@
+// ==========================================
 // 人生重要节点类型
+// ==========================================
+
 export interface Milestone {
   id: string;
   date: Date;
@@ -18,8 +21,8 @@ export interface Milestone {
   tags?: string[]; // 用户自定义标签（如「婚姻」「健康」「搬家」「职业转换」）
   connections?: string[]; // 关联其他 Milestone ID（如「升职」关联「入职那家公司」）
   mediaAttachments?: MediaAttachment[]; // 多媒体附件
-  createdAt?: Date; // 创建时间
-  updatedAt?: Date; // 更新时间
+  createdAt: Date; // 创建时间
+  updatedAt: Date; // 更新时间
 }
 
 // 多媒体附件类型
@@ -50,24 +53,37 @@ export type MilestoneStatus =
   | 'completed'           // 已完成
   | 'planned';            // 计划中
 
+// ==========================================
 // 财富记录类型
+// ==========================================
+
 export interface WealthRecord {
   id: string;
   date: Date;
-  totalAssets: number;
   changeAmount: number;
   changeReason: string;
   breakdown: AssetBreakdown;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
+// 资产分布明细（统一命名）
 export interface AssetBreakdown {
-  liquidCapital: number;
-  equities: number;
-  realEstate: number;
-  other: number;
+  liquid: number;      // 流动资金（原 liquidCapital）
+  equities: number;    // 股票资产
+  realEstate: number;  // 房地产资产
+  other: number;       // 其他资产
 }
 
+// 计算属性：带总资产的财富记录
+export type WealthRecordWithTotal = WealthRecord & {
+  totalAssets: number;  // 计算得出，不从数据库存储
+};
+
+// ==========================================
 // 人生目标类型
+// ==========================================
+
 export interface LifeGoal {
   id: string;
   title: string;
@@ -76,15 +92,15 @@ export interface LifeGoal {
   targetDate?: Date;
   progress: number;
   estimatedCost: number;
-  milestones: string[]; // 关联的 milestone IDs
+  milestones: string[]; // 关联的 milestone IDs（将通过 goal_milestones 表实现）
   status: GoalStatus;
   priority?: GoalPriority; // 目标优先级
   dependsOn?: string[]; // 依赖的其他目标 ID
-  createdAt?: Date; // 创建时间
-  updatedAt?: Date; // 更新时间
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export type GoalPriority = 'low' | 'medium' | 'high';
+export type GoalPriority = 'low' | 'medium' | 'high' | 'critical';
 
 export type GoalCategory =
   | 'financial'           // 财务目标
@@ -99,43 +115,6 @@ export type GoalStatus =
   | 'in-progress'         // 进行中
   | 'achieved';           // 已实现
 
-// 导航类型
-export interface NavItem {
-  label: string;
-  href: string;
-  icon: string;
-  active?: boolean;
-}
-
-// 用户配置类型
-export interface UserPreferences {
-  theme: 'light' | 'dark' | 'auto';
-  currency: string;
-  language: string;
-  timezone: string;
-  weeklyReminder: boolean;
-  privacyMode: boolean;
-  dataExportFormat: 'json' | 'csv' | 'pdf';
-}
-
-// 数据导出格式
-export interface ExportData {
-  version: string;
-  exportedAt: Date;
-  milestones: Milestone[];
-  wealthRecords: WealthRecord[];
-  lifeGoals: LifeGoal[];
-  userPreferences: UserPreferences;
-}
-
-// 备份元数据
-export interface BackupMetadata {
-  version: string;
-  createdAt: Date;
-  dataSize: number;
-  checksum: string;
-}
-
 // ==========================================
 // 项目作品集类型
 // ==========================================
@@ -143,18 +122,18 @@ export interface BackupMetadata {
 export type ProjectStatus =
   | 'active'          // 活跃维护
   | 'in-progress'     // 开发中
+  | 'completed'       // 已完成（新增）
   | 'archived'        // 已归档
   | 'planning';       // 规划中
 
+// 统一枚举值（与数据库一致）
 export type ProjectCategory =
-  | 'web-app'         // Web 应用
-  | 'mobile-app'      // 移动应用
-  | 'cli-tool'        // 命令行工具
-  | 'library'         // 开源库
-  | 'api-service'     // API 服务
-  | 'automation'      // 自动化
-  | 'design'          // 设计项目
-  | 'experiment';     // 实验项目
+  | 'web'             // Web 应用（原 web-app）
+  | 'mobile'          // 移动应用（原 mobile-app）
+  | 'desktop'         // 桌面应用（新增）
+  | 'ai-ml'           // AI/ML 项目（新增）
+  | 'infrastructure'  // 基础设施（新增）
+  | 'other';          // 其他（统称）
 
 export type ProjectMilestoneType = 'release' | 'feature' | 'achievement' | 'learning';
 
@@ -191,4 +170,48 @@ export interface Project {
   estimatedHoursInvested?: number;
   monthlyCost?: number;
   featured?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ==========================================
+// 通用类型
+// ==========================================
+
+// 导航类型
+export interface NavItem {
+  label: string;
+  href: string;
+  icon: string;
+  active?: boolean;
+}
+
+// 用户配置类型
+export interface UserPreferences {
+  theme: 'light' | 'dark' | 'auto';
+  currency: string;
+  language: string;
+  timezone: string;
+  weeklyReminder: boolean;
+  privacyMode: boolean;
+  dataExportFormat: 'json' | 'csv' | 'pdf';
+}
+
+// 数据导出格式
+export interface ExportData {
+  version: string;
+  exportedAt: Date;
+  milestones: Milestone[];
+  wealthRecords: WealthRecord[];
+  lifeGoals: LifeGoal[];
+  projects: Project[];
+  userPreferences: UserPreferences;
+}
+
+// 备份元数据
+export interface BackupMetadata {
+  version: string;
+  createdAt: Date;
+  dataSize: number;
+  checksum: string;
 }

@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
-import { sampleWealthRecords, formatCurrency, formatDate } from '@/lib/data';
+import { useAuth } from '@/contexts/AuthContext';
+import { formatCurrency, formatDate, getWealthRecordWithTotal } from '@/lib/data';
 import { WealthRecord } from '@/types';
+import { wealthRecordAPI } from '@/lib/api/wealth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,7 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Loader2 } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -40,23 +42,53 @@ import {
 } from 'recharts';
 
 export default function WealthPage() {
-  const [records, setRecords] = useState<WealthRecord[]>(sampleWealthRecords);
+  const { user } = useAuth();
+  const [records, setRecords] = useState<WealthRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showChartPanel, setShowChartPanel] = useState(false);
   const [editingRecord, setEditingRecord] = useState<WealthRecord | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [chartType, setChartType] = useState<'line' | 'area'>('line');
 
+  // Load wealth records from API
+  const loadRecords = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await wealthRecordAPI.getAll();
+
+      // Convert date strings to Date objects
+      const records = (data as unknown as WealthRecord[]).map(r => ({
+        ...r,
+        date: new Date(r.date),
+      }));
+
+      setRecords(records);
+    } catch (err) {
+      console.error('Failed to load wealth records:', err);
+      setError('加载财富记录失败，请检查网络连接');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRecords();
+  }, []);
+
   // 计算当前总资产
-  const currentTotal = records.length > 0 ? records[records.length - 1].totalAssets : 0;
+  const recordsWithTotal = records.map(getWealthRecordWithTotal);
+  const currentTotal = recordsWithTotal.length > 0 ? recordsWithTotal[recordsWithTotal.length - 1].totalAssets : 0;
 
   // 准备图表数据
-  const chartData = records.map(record => ({
+  const chartData = recordsWithTotal.map(record => ({
     month: new Date(record.date).toLocaleDateString('zh-CN', { month: 'short' }),
     date: record.date,
     总资产: record.totalAssets,
     变化额: record.changeAmount,
-    流动资金: record.breakdown.liquidCapital,
+    流动资金: record.breakdown.liquid,
     股票: record.breakdown.equities,
     房地产: record.breakdown.realEstate,
   }));
@@ -70,51 +102,116 @@ export default function WealthPage() {
   });
 
   // 添加月份记录
-  const handleAddMonth = () => {
+  const handleAddMonth = async () => {
+    if (!user) {
+      alert('请先登录');
+      return;
+    }
+
     const lastRecord = records[records.length - 1];
+    if (!lastRecord) return;
+
+    const lastRecordWithTotal = getWealthRecordWithTotal(lastRecord);
     const newDate = new Date(lastRecord.date);
     newDate.setMonth(newDate.getMonth() + 1);
 
-    const newRecord: WealthRecord = {
-      id: Date.now().toString(),
-      date: newDate,
-      totalAssets: lastRecord.totalAssets + 30000,
-      changeAmount: 30000,
-      changeReason: '月度记录 - 待编辑',
+    const newRecordData = {
+      user_id: user.id,
+      date: newDate.toISOString(),
+      change_amount: 30000,
+      change_reason: '月度记录 - 待编辑',
       breakdown: {
-        liquidCapital: lastRecord.breakdown.liquidCapital + 5000,
+        liquid: lastRecord.breakdown.liquid + 5000,
         equities: lastRecord.breakdown.equities + 15000,
-        realEstate: lastRecord.breakdown.realEstate + 10000,
+        real_estate: lastRecord.breakdown.realEstate + 10000,
         other: lastRecord.breakdown.other + 0,
       },
     };
 
-    setRecords([...records, newRecord]);
-    setEditingRecord(newRecord);
-    setShowAddModal(true);
+    try {
+      const created = await wealthRecordAPI.create(newRecordData);
+      await loadRecords();
+      const newRecord = {
+        ...created,
+        date: new Date(created.date),
+        createdAt: new Date(created.created_at),
+        updatedAt: new Date(created.updated_at),
+      } as unknown as WealthRecord;
+      setEditingRecord(newRecord);
+      setShowAddModal(true);
+    } catch (err) {
+      console.error('Failed to create wealth record:', err);
+      alert('创建失败，请重试');
+    }
   };
 
   // 添加记录
-  const handleAddRecord = (newRecord: Omit<WealthRecord, 'id'>) => {
-    const record: WealthRecord = {
-      ...newRecord,
-      id: Date.now().toString(),
-    };
-    setRecords([...records, record].sort((a, b) => a.date.getTime() - b.date.getTime()));
-    setShowAddModal(false);
+  const handleAddRecord = async (newRecord: Omit<WealthRecord, 'id'>) => {
+    if (!user) {
+      alert('请先登录');
+      return;
+    }
+
+    try {
+      const recordData = {
+        user_id: user.id,
+        date: newRecord.date.toISOString().split('T')[0],
+        total_assets: newRecord.totalAssets,
+        change_amount: newRecord.changeAmount,
+        change_reason: newRecord.changeReason,
+        breakdown: {
+          liquid: newRecord.breakdown.liquid,
+          equities: newRecord.breakdown.equities,
+          realEstate: newRecord.breakdown.realEstate,
+          other: newRecord.breakdown.other,
+        },
+      };
+
+      await wealthRecordAPI.create(recordData);
+      await loadRecords();
+      setShowAddModal(false);
+    } catch (err) {
+      console.error('Failed to create wealth record:', err);
+      alert('创建失败，请重试');
+    }
   };
 
   // 更新记录
-  const handleUpdateRecord = (updatedRecord: WealthRecord) => {
-    setRecords(records.map(r => r.id === updatedRecord.id ? updatedRecord : r));
-    setEditingRecord(null);
-    setShowAddModal(false);
+  const handleUpdateRecord = async (updatedRecord: WealthRecord) => {
+    try {
+      const recordData = {
+        date: updatedRecord.date.toISOString().split('T')[0],
+        total_assets: updatedRecord.totalAssets,
+        change_amount: updatedRecord.changeAmount,
+        change_reason: updatedRecord.changeReason,
+        breakdown: {
+          liquid: updatedRecord.breakdown.liquid,
+          equities: updatedRecord.breakdown.equities,
+          realEstate: updatedRecord.breakdown.realEstate,
+          other: updatedRecord.breakdown.other,
+        },
+      };
+
+      await wealthRecordAPI.update(updatedRecord.id, recordData);
+      await loadRecords();
+      setEditingRecord(null);
+      setShowAddModal(false);
+    } catch (err) {
+      console.error('Failed to update wealth record:', err);
+      alert('更新失败，请重试');
+    }
   };
 
   // 删除记录
-  const handleDeleteRecord = (id: string) => {
+  const handleDeleteRecord = async (id: string) => {
     if (confirm('确定要删除这条财富记录吗？')) {
-      setRecords(records.filter(r => r.id !== id));
+      try {
+        await wealthRecordAPI.delete(id);
+        await loadRecords();
+      } catch (err) {
+        console.error('Failed to delete wealth record:', err);
+        alert('删除失败，请重试');
+      }
     }
   };
 
@@ -123,7 +220,9 @@ export default function WealthPage() {
     const index = records.findIndex(r => r.id === record.id);
     if (index === 0) return 0;
     const prevRecord = records[index - 1];
-    return ((record.totalAssets - prevRecord.totalAssets) / prevRecord.totalAssets) * 100;
+    const prevRecordWithTotal = getWealthRecordWithTotal(prevRecord);
+    const recordWithTotal = getWealthRecordWithTotal(record);
+    return ((recordWithTotal.totalAssets - prevRecordWithTotal.totalAssets) / prevRecordWithTotal.totalAssets) * 100;
   };
 
   const handleCloseModal = () => {
@@ -166,6 +265,22 @@ export default function WealthPage() {
             <p className="text-base text-lumen-text-secondary max-w-[480px] leading-relaxed">
               记录每月的财富变化，追踪增长趋势，理解每一笔变化背后的原因。让数据讲述你的财富故事。
             </p>
+
+            {loading && (
+              <div className="flex items-center gap-2 text-lumen-text-secondary mt-8">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                加载中...
+              </div>
+            )}
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mt-8">
+                {error}
+                <Button variant="link" onClick={loadRecords} className="ml-2">
+                  重试
+                </Button>
+              </div>
+            )}
           </section>
 
           {/* Summary Card */}
@@ -276,7 +391,7 @@ export default function WealthPage() {
                       {/* Left: Financial Summary */}
                       <div>
                         <h3 className="text-2xl font-semibold text-lumen-text-primary mb-4">
-                          {formatCurrency(record.totalAssets)}
+                          {formatCurrency(getWealthRecordWithTotal(record).totalAssets)}
                         </h3>
                         <div className="flex items-center gap-2 text-lumen-text-secondary mb-4">
                           <span className="text-sm">{record.changeReason}</span>
@@ -287,7 +402,7 @@ export default function WealthPage() {
                             变化额
                           </div>
                           <div className={`text-base font-semibold ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                            {isPositive ? '+' : ''}{formatCurrency(record.changeAmount)}
+                            {isPositive ? '+' : ''}{formatCurrency(record.changeAmount || 0)}
                           </div>
                         </div>
                       </div>
@@ -301,7 +416,7 @@ export default function WealthPage() {
                           <div className="flex justify-between items-baseline">
                             <span className="text-sm text-lumen-text-secondary">流动资金</span>
                             <span className="text-sm font-medium text-lumen-text-primary">
-                              {formatCurrency(record.breakdown.liquidCapital)}
+                              {formatCurrency(record.breakdown.liquid)}
                             </span>
                           </div>
                           <div className="flex justify-between items-baseline">
@@ -619,13 +734,13 @@ export default function WealthPage() {
                   <div className="flex justify-between">
                     <span className="text-lumen-text-secondary">总增长</span>
                     <span className="font-medium text-lumen-text-primary">
-                      {formatCurrency(records[records.length - 1].totalAssets - records[0].totalAssets)}
+                      {formatCurrency(recordsWithTotal[recordsWithTotal.length - 1].totalAssets - recordsWithTotal[0].totalAssets)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-lumen-text-secondary">平均月增长</span>
                     <span className="font-medium text-lumen-text-primary">
-                      {formatCurrency((records[records.length - 1].totalAssets - records[0].totalAssets) / (records.length - 1))}
+                      {formatCurrency((recordsWithTotal[recordsWithTotal.length - 1].totalAssets - recordsWithTotal[0].totalAssets) / (recordsWithTotal.length - 1))}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -659,15 +774,16 @@ export default function WealthPage() {
               const formData = new FormData(e.currentTarget);
               const newRecord: Omit<WealthRecord, 'id'> = {
                 date: new Date(formData.get('date') as string),
-                totalAssets: Number(formData.get('totalAssets')),
                 changeAmount: Number(formData.get('changeAmount')),
                 changeReason: formData.get('changeReason') as string,
                 breakdown: {
-                  liquidCapital: Number(formData.get('liquidCapital')),
+                  liquid: Number(formData.get('liquid')),
                   equities: Number(formData.get('equities')),
                   realEstate: Number(formData.get('realEstate')),
                   other: Number(formData.get('other')),
                 },
+                createdAt: editingRecord?.createdAt || new Date(),
+                updatedAt: new Date(),
               };
 
               if (editingRecord) {
@@ -685,17 +801,6 @@ export default function WealthPage() {
                 type="date"
                 name="date"
                 defaultValue={editingRecord ? editingRecord.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="totalAssets">总资产</Label>
-              <Input
-                id="totalAssets"
-                type="number"
-                name="totalAssets"
-                defaultValue={editingRecord?.totalAssets}
                 required
               />
             </div>
@@ -724,12 +829,12 @@ export default function WealthPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="liquidCapital">流动资金</Label>
+                <Label htmlFor="liquid">流动资金</Label>
                 <Input
-                  id="liquidCapital"
+                  id="liquid"
                   type="number"
-                  name="liquidCapital"
-                  defaultValue={editingRecord?.breakdown.liquidCapital}
+                  name="liquid"
+                  defaultValue={editingRecord?.breakdown.liquid}
                   required
                 />
               </div>

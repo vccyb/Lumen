@@ -1,11 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { navItems } from '@/lib/data';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { LogOut, User } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, signOut } = useAuth();
 
   return (
     <aside className="w-[280px] border-r border-lumen-border-subtle p-6 flex flex-col justify-between">
@@ -46,28 +51,53 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* Global Metrics */}
+      {/* User Section */}
       <div className="border-t border-lumen-border-subtle pt-6">
-        <div className="mb-6">
-          <div className="text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold">
-            总资产配置
-          </div>
-          <div className="text-xl font-medium mt-1">¥2,845,000</div>
-        </div>
-        <div className="mb-6">
-          <div className="text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold">
-            主要回报
-          </div>
-          <div className="text-base italic text-lumen-text-secondary mt-1">
-            体验与基础
-          </div>
-        </div>
-        <div>
-          <div className="text-xs uppercase tracking-widest text-lumen-text-tertiary font-semibold">
-            档案跨度
-          </div>
-          <div className="text-sm font-normal mt-1">2018 — 至今</div>
-        </div>
+        {user ? (
+          <>
+            {/* Logged in */}
+            <div className="mb-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-lumen-accent-gold/20 flex items-center justify-center">
+                  <User className="w-5 h-5 text-lumen-accent-gold" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-lumen-text-primary">
+                    {user.user_metadata?.name || user.email?.split('@')[0]}
+                  </div>
+                  <div className="text-xs text-lumen-text-tertiary truncate max-w-[180px]">
+                    {user.email}
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => signOut()}
+                className="w-full justify-start text-lumen-text-secondary hover:text-lumen-text-primary"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                登出
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Not logged in */}
+            <div className="space-y-3">
+              <p className="text-xs text-lumen-text-tertiary mb-3">
+                登录以保存您的数据
+              </p>
+              <Button
+                variant="warm"
+                className="w-full"
+                onClick={() => router.push('/auth/login')}
+              >
+                登录 / 注册
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </aside>
   );

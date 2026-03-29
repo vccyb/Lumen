@@ -1,14 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
-import { sampleMilestones, formatCurrency } from '@/lib/data';
 import { Milestone } from '@/types';
-import Image from 'next/image';
+import { milestoneAPI } from '@/lib/api/milestones';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -22,53 +22,118 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useScrollAnimation } from '@/lib/hooks/useScrollAnimation';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { MilestoneCard } from '@/components/MilestoneCard';
 
 export default function HomePage() {
-  const [milestones, setMilestones] = useState(sampleMilestones);
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
 
-  const handleAddMilestone = (newMilestone: Omit<Milestone, 'id'>) => {
-    const milestone: Milestone = {
-      ...newMilestone,
-      id: Date.now().toString(),
-    };
-    setMilestones([...milestones, milestone].sort((a, b) => a.date.getTime() - b.date.getTime()));
-    setShowAddModal(false);
-  };
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/auth/login');
+    }
+  }, [user, authLoading, router]);
 
-  const handleUpdateMilestone = (updatedMilestone: Milestone) => {
-    setMilestones(milestones.map(m => m.id === updatedMilestone.id ? updatedMilestone : m));
-    setEditingMilestone(null);
-    setShowAddModal(false);
-  };
+  // Load milestones from API
+  const loadMilestones = async () => {
+    if (!user) return;
 
-  const handleDeleteMilestone = (id: string) => {
-    if (confirm('确定要删除这条人生节点吗？')) {
-      setMilestones(milestones.filter(m => m.id !== id));
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await milestoneAPI.getAll();
+
+      // Convert date strings to Date objects for form handling
+      const milestones = (data as unknown as Milestone[]).map(m => ({
+        ...m,
+        date: new Date(m.date),
+      }));
+
+      setMilestones(milestones);
+    } catch (err) {
+      console.error('Failed to load milestones:', err);
+      setError('加载人生节点失败，请检查网络连接');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-    }).format(date);
+  useEffect(() => {
+    if (user) {
+      loadMilestones();
+    }
+  }, [user]);
+
+  const handleAddMilestone = async (newMilestone: Omit<Milestone, 'id'>) => {
+    if (!user) {
+      alert('请先登录');
+      return;
+    }
+
+    try {
+      const milestoneData = {
+        user_id: user.id,
+        date: newMilestone.date.toISOString().split('T')[0], // Use date format YYYY-MM-DD
+        title: newMilestone.title,
+        description: newMilestone.description,
+        category: newMilestone.category,
+        capital_deployed: newMilestone.capitalDeployed,
+        asset_class: newMilestone.assetClass,
+        image_url: newMilestone.imageUrl,
+        location: newMilestone.location,
+        status: newMilestone.status,
+      };
+
+      const created = await milestoneAPI.create(milestoneData);
+      await loadMilestones(); // Reload to get the new list
+      setShowAddModal(false);
+    } catch (err) {
+      console.error('Failed to create milestone:', err);
+      alert('创建失败，请重试');
+    }
   };
 
-  const getAssetClassLabel = (assetClass: string) => {
-    const labels: Record<string, string> = {
-      'tangible-shelter': '有形-住房',
-      'tangible-vehicle': '有形-交通工具',
-      'intangible-experiential': '无形-体验',
-      'venture-autonomy': '创业-自主',
-      'venture-investment': '创业-投资',
-      'equities': '股票',
-      'real-estate': '房地产',
-    };
-    return labels[assetClass] || assetClass;
+  const handleUpdateMilestone = async (updatedMilestone: Milestone) => {
+    try {
+      const milestoneData = {
+        date: updatedMilestone.date.toISOString().split('T')[0], // Use date format YYYY-MM-DD
+        title: updatedMilestone.title,
+        description: updatedMilestone.description,
+        category: updatedMilestone.category,
+        capital_deployed: updatedMilestone.capitalDeployed,
+        asset_class: updatedMilestone.assetClass,
+        image_url: updatedMilestone.imageUrl,
+        location: updatedMilestone.location,
+        status: updatedMilestone.status,
+      };
+
+      await milestoneAPI.update(updatedMilestone.id, milestoneData);
+      await loadMilestones(); // Reload to get the updated list
+      setEditingMilestone(null);
+      setShowAddModal(false);
+    } catch (err) {
+      console.error('Failed to update milestone:', err);
+      alert('更新失败，请重试');
+    }
+  };
+
+  const handleDeleteMilestone = async (id: string) => {
+    if (confirm('确定要删除这条人生节点吗？')) {
+      try {
+        await milestoneAPI.delete(id);
+        await loadMilestones(); // Reload to get the updated list
+      } catch (err) {
+        console.error('Failed to delete milestone:', err);
+        alert('删除失败，请重试');
+      }
+    }
   };
 
   const handleCloseModal = () => {
@@ -87,7 +152,7 @@ export default function HomePage() {
             <div className="text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold">
               人生叙事
             </div>
-            <Button variant="warm" onClick={() => setShowAddModal(true)}>
+            <Button variant="warm" onClick={() => setShowAddModal(true)} disabled={loading}>
               + 新增人生节点
             </Button>
           </div>
@@ -98,135 +163,40 @@ export default function HomePage() {
           <p className="text-base text-lumen-text-secondary max-w-[480px] leading-relaxed">
             每个人生节点都是一次重要的选择与转折。记录那些塑造了你的关键时刻——无论是第一次独立创业、间隔年的觉醒，还是实现长久的梦想。这些故事构成了你独一无二的人生叙事。
           </p>
+
+          {/* Loading State */}
+          {loading && (
+            <div className="flex items-center gap-2 text-lumen-text-secondary mt-8">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              加载中...
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mt-8">
+              {error}
+              <Button variant="link" onClick={loadMilestones} className="ml-2">
+                重试
+              </Button>
+            </div>
+          )}
         </section>
 
         {/* Ledger Container */}
         <section className="relative pb-40 pt-5 flex flex-col gap-15 px-24 max-w-[1100px] mx-auto">
-          {milestones.map((milestone, index) => {
-            const isEven = index % 2 === 1;
-            const [ref, isVisible] = useScrollAnimation();
-
-            return (
-              <article
-                key={milestone.id}
-                ref={ref}
-                className={`scroll-animate grid grid-cols-2 gap-20 p-15 relative z-1 group
-                  bg-lumen-surface rounded-2xl shadow-glow transition-transform duration-300 hover:scale-[1.01]
-                  ${isEven ? 'order-2' : 'order-1'} ${isVisible ? 'is-visible' : ''}`}
-              >
-                {/* Edit/Delete Buttons - Inside card, visible on hover */}
-                <div className={`absolute top-6 ${isEven ? 'left-6' : 'right-6'} flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setEditingMilestone(milestone);
-                      setShowAddModal(true);
-                    }}
-                    className="h-8 w-8 bg-lumen-bg-system/80 backdrop-blur-sm hover:bg-white"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteMilestone(milestone.id)}
-                    className="h-8 w-8 bg-lumen-bg-system/80 backdrop-blur-sm hover:bg-red-50 hover:text-red-500"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                {/* Content */}
-                <div className={`flex flex-col justify-center max-w-[400px] ${isEven ? 'order-1 items-end text-right' : 'order-2'}`}>
-                  {/* Chapter Number */}
-                  <div className="text-base font-semibold text-lumen-text-tertiary mb-3">
-                    {String(index + 1).padStart(2, '0')}.
-                  </div>
-
-                  {/* Title */}
-                  <h2 className="text-[42px] leading-tight mb-6 text-lumen-text-primary tracking-tight">
-                    {milestone.title}
-                  </h2>
-
-                  {/* Reflection */}
-                  <p className="text-base text-lumen-text-secondary leading-relaxed mb-12 font-normal">
-                    "{milestone.description}"
-                  </p>
-
-                  {/* Divider */}
-                  <div className={`h-px bg-lumen-border-subtle w-10 mb-6 ${isEven ? 'ml-auto' : ''}`} />
-
-                  {/* Meta Grid */}
-                  <div className="flex flex-col gap-6 w-full border-t border-lumen-border-subtle pt-6">
-                    {/* Capital Allocated */}
-                    <div className={`flex justify-between items-baseline gap-6 ${isEven ? 'flex-row-reverse' : ''}`}>
-                      <span className="text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold flex-shrink-0">
-                        资本配置
-                      </span>
-                      <span className="text-base font-medium">
-                        {formatCurrency(milestone.capitalDeployed)}
-                      </span>
-                    </div>
-
-                    {/* Asset Class */}
-                    <div className={`flex justify-between items-baseline gap-6 ${isEven ? 'flex-row-reverse' : ''}`}>
-                      <span className="text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold flex-shrink-0">
-                        资产类别
-                      </span>
-                      <span className="text-sm font-normal">
-                        {getAssetClassLabel(milestone.assetClass).toUpperCase()}
-                      </span>
-                    </div>
-
-                    {/* Emotional Yield */}
-                    <div className={`flex justify-between items-baseline gap-6 ${isEven ? 'flex-row-reverse' : ''}`}>
-                      <span className="text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold flex-shrink-0">
-                        情感回报
-                      </span>
-                      <span className="text-base font-semibold text-lumen-text-primary">
-                        {milestone.emotionalYield.join('、')}
-                      </span>
-                    </div>
-
-                    {/* Location or Status */}
-                    {(milestone.location || milestone.status) && (
-                      <div className={`flex justify-between items-baseline gap-6 ${isEven ? 'flex-row-reverse' : ''}`}>
-                        <span className="text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold flex-shrink-0">
-                          {milestone.location ? '位置' : '状态'}
-                        </span>
-                        <span className="text-sm font-normal text-lumen-text-secondary">
-                          {milestone.location || (milestone.status === 'compounding' ? '复合增长中' : milestone.status)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Visual */}
-                <div className={`relative w-full aspect-[3/4] overflow-hidden rounded-lg ${isEven ? 'order-2' : 'order-1'}`}>
-                  {milestone.imageUrl ? (
-                    <Image
-                      src={milestone.imageUrl}
-                      alt={milestone.title}
-                      fill
-                      className="object-cover transition-transform duration-500 hover:scale-105"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-lumen-bg-system flex items-center justify-center">
-                      <svg className="w-16 h-16 text-lumen-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                  )}
-                  {/* Date Badge */}
-                  <Badge className="absolute top-6 right-6 bg-white/90 backdrop-blur-sm px-3.5 py-2 shadow-sm z-3 text-lumen-text-primary font-semibold text-[10px] uppercase tracking-widest rounded-lg">
-                    {formatDate(milestone.date).toUpperCase()}
-                  </Badge>
-                </div>
-              </article>
-            );
-          })}
+          {milestones.map((milestone, index) => (
+            <MilestoneCard
+              key={milestone.id}
+              milestone={milestone}
+              index={index}
+              onEdit={(milestone) => {
+                setEditingMilestone(milestone);
+                setShowAddModal(true);
+              }}
+              onDelete={handleDeleteMilestone}
+            />
+          ))}
         </section>
       </main>
 
@@ -251,6 +221,8 @@ export default function HomePage() {
                 imageUrl: formData.get('imageUrl') as string || undefined,
                 location: formData.get('location') as string || undefined,
                 status: formData.get('status') as Milestone['status'] || undefined,
+                createdAt: editingMilestone?.createdAt || new Date(),
+                updatedAt: new Date(),
               };
 
               if (editingMilestone) {
@@ -349,8 +321,7 @@ export default function HomePage() {
                 id="emotionalYield"
                 type="text"
                 name="emotionalYield"
-                required
-                defaultValue={editingMilestone?.emotionalYield.join('、')}
+                defaultValue={editingMilestone?.emotionalYield?.join('、') || ''}
                 placeholder="例如：稳定性、自由、成长"
               />
             </div>

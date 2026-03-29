@@ -7,6 +7,7 @@ export function exportToJSON(
   milestones: any[],
   wealthRecords: any[],
   lifeGoals: any[],
+  projects: any[],
   userPreferences: any
 ): string {
   const exportData: ExportData = {
@@ -15,6 +16,7 @@ export function exportToJSON(
     milestones,
     wealthRecords,
     lifeGoals,
+    projects,
     userPreferences,
   };
 
@@ -28,16 +30,19 @@ export function exportWealthToCSV(wealthRecords: any[]): string {
   if (wealthRecords.length === 0) return '';
 
   const headers = ['日期', '总资产', '变化额', '变化原因', '流动资金', '股票', '房地产', '其他'];
-  const rows = wealthRecords.map(record => [
-    new Date(record.date).toLocaleDateString('zh-CN'),
-    record.totalAssets.toString(),
-    record.changeAmount.toString(),
-    record.changeReason,
-    record.breakdown.liquidCapital.toString(),
-    record.breakdown.equities.toString(),
-    record.breakdown.realEstate.toString(),
-    record.breakdown.other.toString(),
-  ]);
+  const rows = wealthRecords.map(record => {
+    const totalAssets = record.breakdown.liquid + record.breakdown.equities + record.breakdown.realEstate + record.breakdown.other;
+    return [
+      new Date(record.date).toLocaleDateString('zh-CN'),
+      totalAssets.toString(),
+      record.changeAmount.toString(),
+      record.changeReason,
+      record.breakdown.liquid.toString(),
+      record.breakdown.equities.toString(),
+      record.breakdown.realEstate.toString(),
+      record.breakdown.other.toString(),
+    ];
+  });
 
   const csvContent = [
     headers.join(','),
@@ -138,6 +143,7 @@ export function getDataSizeStats(data: ExportData): {
   milestones: number;
   wealthRecords: number;
   lifeGoals: number;
+  projects: number;
   userPreferences: number;
 } {
   const getSize = (obj: any) => JSON.stringify(obj).length;
@@ -147,6 +153,7 @@ export function getDataSizeStats(data: ExportData): {
     milestones: getSize(data.milestones),
     wealthRecords: getSize(data.wealthRecords),
     lifeGoals: getSize(data.lifeGoals),
+    projects: getSize(data.projects),
     userPreferences: getSize(data.userPreferences),
   };
 }

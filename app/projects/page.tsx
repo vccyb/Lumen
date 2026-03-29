@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Sidebar from '@/components/Sidebar';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,18 +24,50 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import Progress from '@/components/ui/Progress';
-import { sampleProjects, getProjectStatusLabel, getProjectCategoryLabel, getMilestoneTypeLabel, formatDate, formatCurrency } from '@/lib/data';
-import { Project } from '@/types';
-import { ExternalLink, Github, Pencil, Trash2, Plus, Clock, DollarSign, Star, Zap, BookOpen, Trophy, Rocket, ChevronRight } from 'lucide-react';
+import { getProjectStatusLabel, getProjectCategoryLabel, getMilestoneTypeLabel, formatDate, formatCurrency } from '@/lib/data';
+import { Project, ProjectMilestone } from '@/types';
+import { projectAPI } from '@/lib/api/projects';
+import { ExternalLink, Github, Pencil, Trash2, Plus, Clock, DollarSign, Star, Zap, BookOpen, Trophy, Rocket, ChevronRight, Loader2 } from 'lucide-react';
 
 type FilterStatus = 'all' | Project['status'];
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState(sampleProjects);
+  const { user } = useAuth();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+
+  // Load projects from API
+  const loadProjects = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await projectAPI.getAll();
+
+      // Convert date strings to Date objects
+      const projects = (data as unknown as Project[]).map(p => ({
+        ...p,
+        startDate: new Date(p.startDate),
+        lastUpdated: new Date(p.lastUpdated),
+      }));
+
+      setProjects(projects || []);
+    } catch (err) {
+      console.error('Failed to load projects:', err);
+      setError('加载项目失败，请检查网络连接');
+      setProjects([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
 
   const getStatusColor = (status: Project['status']) => {
     const colors: Record<string, string> = {
@@ -57,30 +90,83 @@ export default function ProjectsPage() {
   };
 
   const filteredProjects = filterStatus === 'all'
-    ? projects
-    : projects.filter(p => p.status === filterStatus);
+    ? projects || []
+    : (projects || []).filter(p => p.status === filterStatus);
 
   const featuredProjects = filteredProjects.filter(p => p.featured);
   const regularProjects = filteredProjects.filter(p => !p.featured);
 
-  const totalTechStacks = new Set(projects.flatMap(p => p.techStack)).size;
-  const activeCount = projects.filter(p => p.status === 'active' || p.status === 'in-progress').length;
+  const totalTechStacks = new Set((projects || []).flatMap(p => p.techStack || [])).size;
+  const activeCount = (projects || []).filter(p => p.status === 'active' || p.status === 'in-progress').length;
 
-  const handleAddProject = (data: Omit<Project, 'id'>) => {
-    const project: Project = { ...data, id: Date.now().toString() };
-    setProjects([...projects, project]);
-    setShowAddModal(false);
+  const handleAddProject = async (data: Omit<Project, 'id'>) => {
+    if (!user) {
+      alert('请先登录');
+      return;
+    }
+
+    try {
+      const projectData = {
+        user_id: user.id,
+        name: data.name,
+        description: data.description,
+        long_description: data.longDescription || null,
+        status: data.status,
+        category: data.category,
+        cover_image: data.coverImage || null,
+        start_date: data.startDate.toISOString().split('T')[0],
+        last_updated: data.lastUpdated.toISOString().split('T')[0],
+        progress: data.progress || null,
+        estimated_hours_invested: data.estimatedHoursInvested || null,
+        monthly_cost: data.monthlyCost || null,
+        featured: data.featured || false,
+      };
+
+      await projectAPI.create(projectData);
+      await loadProjects();
+      setShowAddModal(false);
+    } catch (err) {
+      console.error('Failed to create project:', err);
+      alert('创建失败，请重试');
+    }
   };
 
-  const handleUpdateProject = (updated: Project) => {
-    setProjects(projects.map(p => p.id === updated.id ? updated : p));
-    setEditingProject(null);
-    setShowAddModal(false);
+  const handleUpdateProject = async (updated: Project) => {
+    try {
+      const projectData = {
+        name: updated.name,
+        description: updated.description,
+        long_description: updated.longDescription || null,
+        status: updated.status,
+        category: updated.category,
+        cover_image: updated.coverImage || null,
+        start_date: updated.startDate.toISOString().split('T')[0],
+        last_updated: updated.lastUpdated.toISOString().split('T')[0],
+        progress: updated.progress || null,
+        estimated_hours_invested: updated.estimatedHoursInvested || null,
+        monthly_cost: updated.monthlyCost || null,
+        featured: updated.featured || false,
+      };
+
+      await projectAPI.update(updated.id, projectData);
+      await loadProjects();
+      setEditingProject(null);
+      setShowAddModal(false);
+    } catch (err) {
+      console.error('Failed to update project:', err);
+      alert('更新失败，请重试');
+    }
   };
 
-  const handleDeleteProject = (id: string) => {
+  const handleDeleteProject = async (id: string) => {
     if (confirm('确定要删除这个项目吗？')) {
-      setProjects(projects.filter(p => p.id !== id));
+      try {
+        await projectAPI.delete(id);
+        await loadProjects();
+      } catch (err) {
+        console.error('Failed to delete project:', err);
+        alert('删除失败，请重试');
+      }
     }
   };
 
@@ -121,6 +207,22 @@ export default function ProjectsPage() {
           <p className="text-base text-lumen-text-secondary max-w-[480px] leading-relaxed">
             记录每一个项目的诞生与成长，追踪投入与收获，让代码成为人生叙事的一部分。
           </p>
+
+          {loading && (
+            <div className="flex items-center gap-2 text-lumen-text-secondary mt-8">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              加载中...
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mt-8">
+              {error}
+              <Button variant="link" onClick={loadProjects} className="ml-2">
+                重试
+              </Button>
+            </div>
+          )}
         </section>
 
         {/* Summary Card */}
@@ -225,7 +327,7 @@ export default function ProjectsPage() {
                       </p>
 
                       <div className="flex flex-wrap gap-2 mb-4">
-                        {project.techStack.map(tech => (
+                        {(project.techStack || []).map(tech => (
                           <span key={tech} className="text-[10px] px-2.5 py-1 rounded-full bg-lumen-bg-system text-lumen-text-secondary font-medium">
                             {tech}
                           </span>
@@ -311,14 +413,14 @@ export default function ProjectsPage() {
 
                 {/* Tech Stack */}
                 <div className="flex flex-wrap gap-1.5 mb-4">
-                  {project.techStack.slice(0, 4).map(tech => (
+                  {(project.techStack || []).slice(0, 4).map(tech => (
                     <span key={tech} className="text-[10px] px-2 py-0.5 rounded-full bg-lumen-bg-system text-lumen-text-secondary font-medium">
                       {tech}
                     </span>
                   ))}
-                  {project.techStack.length > 4 && (
+                  {(project.techStack || []).length > 4 && (
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-lumen-bg-system text-lumen-text-tertiary font-medium">
-                      +{project.techStack.length - 4}
+                      +{(project.techStack || []).length - 4}
                     </span>
                   )}
                 </div>
@@ -386,7 +488,7 @@ export default function ProjectsPage() {
 
               {/* External Links */}
               <div className="flex flex-wrap gap-2 mb-6">
-                {selectedProject.links.map(link => (
+                {(selectedProject.links || []).map(link => (
                   <a
                     key={link.label}
                     href={link.url}
@@ -406,7 +508,7 @@ export default function ProjectsPage() {
                   技术栈
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {selectedProject.techStack.map(tech => (
+                  {(selectedProject.techStack || []).map(tech => (
                     <Badge key={tech} variant="secondary" className="rounded-full text-xs">
                       {tech}
                     </Badge>
@@ -544,7 +646,7 @@ export default function ProjectsPage() {
                 description: formData.get('description') as string,
                 longDescription: formData.get('longDescription') as string || undefined,
                 status: (formData.get('status') as Project['status']) || 'in-progress',
-                category: (formData.get('category') as Project['category']) || 'web-app',
+                category: (formData.get('category') as Project['category']) || 'web',
                 coverImage: (formData.get('coverImage') as string) || undefined,
                 techStack,
                 links,
@@ -557,6 +659,8 @@ export default function ProjectsPage() {
                 estimatedHoursInvested: Number(formData.get('estimatedHours') || 0) || undefined,
                 monthlyCost: Number(formData.get('monthlyCost') || 0) || undefined,
                 featured: !!formData.get('featured'),
+                createdAt: editingProject?.createdAt || new Date(),
+                updatedAt: new Date(),
               };
 
               if (editingProject) {
@@ -585,19 +689,17 @@ export default function ProjectsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="category">项目分类</Label>
-                <Select name="category" required defaultValue={editingProject?.category || 'web-app'}>
+                <Select name="category" required defaultValue={editingProject?.category || 'web'}>
                   <SelectTrigger>
                     <SelectValue placeholder="选择分类" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="web-app">Web 应用</SelectItem>
-                    <SelectItem value="mobile-app">移动应用</SelectItem>
-                    <SelectItem value="cli-tool">命令行工具</SelectItem>
-                    <SelectItem value="library">开源库</SelectItem>
-                    <SelectItem value="api-service">API 服务</SelectItem>
-                    <SelectItem value="automation">自动化</SelectItem>
-                    <SelectItem value="design">设计项目</SelectItem>
-                    <SelectItem value="experiment">实验项目</SelectItem>
+                    <SelectItem value="web">Web 应用</SelectItem>
+                    <SelectItem value="mobile">移动应用</SelectItem>
+                    <SelectItem value="desktop">桌面应用</SelectItem>
+                    <SelectItem value="ai-ml">AI/ML 项目</SelectItem>
+                    <SelectItem value="infrastructure">基础设施</SelectItem>
+                    <SelectItem value="other">其他</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
-import { sampleMilestones, sampleWealthRecords, sampleLifeGoals, formatCurrency } from '@/lib/data';
+import { sampleMilestones, sampleWealthRecords, sampleLifeGoals, formatCurrency, getWealthRecordWithTotal } from '@/lib/data';
 import { useScrollAnimation } from '@/lib/hooks/useScrollAnimation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,8 +12,10 @@ export default function DashboardPage() {
   const [records] = useState(sampleWealthRecords);
   const [goals] = useState(sampleLifeGoals);
 
-  const currentTotal = records.length > 0 ? records[records.length - 1].totalAssets : 0;
-  const yearStartTotal = records.length > 0 ? records[0].totalAssets : 0;
+  const currentRecord = records.length > 0 ? getWealthRecordWithTotal(records[records.length - 1]) : null;
+  const yearStartRecord = records.length > 0 ? getWealthRecordWithTotal(records[0]) : null;
+  const currentTotal = currentRecord?.totalAssets ?? 0;
+  const yearStartTotal = yearStartRecord?.totalAssets ?? 0;
   const yearlyChange = currentTotal - yearStartTotal;
   const yearlyChangePercent = yearStartTotal > 0 ? ((yearlyChange / yearStartTotal) * 100).toFixed(1) : '0.0';
 

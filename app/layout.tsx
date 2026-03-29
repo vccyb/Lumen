@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import LightGlow from "@/components/ui/LightGlow";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -21,8 +22,10 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className={`${inter.variable} font-sans`}>
-        <LightGlow />
-        {children}
+        <AuthProvider>
+          <LightGlow />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
