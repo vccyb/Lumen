@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Pencil, Trash2, Loader2 } from 'lucide-react';
+import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
 import {
   LineChart,
   Line,
@@ -58,6 +59,8 @@ export default function WealthPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showChartPanel, setShowChartPanel] = useState(false);
   const [editingRecord, setEditingRecord] = useState<WealthRecord | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [recordToDelete, setRecordToDelete] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [chartType, setChartType] = useState<'line' | 'area'>('line');
 
@@ -243,14 +246,21 @@ export default function WealthPage() {
 
   // 删除记录
   const handleDeleteRecord = async (id: string) => {
-    if (confirm('确定要删除这条财富记录吗？')) {
-      try {
-        await wealthRecordAPI.delete(id);
-        await loadRecords();
-      } catch (err) {
-        console.error('Failed to delete wealth record:', err);
-        alert('删除失败，请重试');
-      }
+    setRecordToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteRecord = async () => {
+    if (!recordToDelete) return;
+
+    try {
+      await wealthRecordAPI.delete(recordToDelete);
+      await loadRecords();
+    } catch (err) {
+      console.error('Failed to delete wealth record:', err);
+      alert('删除失败，请重试');
+    } finally {
+      setRecordToDelete(null);
     }
   };
 
@@ -393,7 +403,7 @@ export default function WealthPage() {
                           setEditingRecord(record);
                           setShowAddModal(true);
                         }}
-                        className="h-8 w-8 bg-lumen-bg-system/80 backdrop-blur-sm hover:bg-white"
+                        className="h-8 w-8 bg-white/90 backdrop-blur-sm hover:bg-white text-lumen-text-secondary hover:text-lumen-text-primary"
                       >
                         <Pencil className="w-4 h-4" />
                       </Button>
@@ -401,7 +411,7 @@ export default function WealthPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDeleteRecord(record.id)}
-                        className="h-8 w-8 bg-lumen-bg-system/80 backdrop-blur-sm hover:bg-red-50 hover:text-red-500"
+                        className="h-8 w-8 bg-white/90 backdrop-blur-sm hover:bg-red-50 text-lumen-text-secondary hover:text-red-500"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -922,6 +932,14 @@ export default function WealthPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDeleteRecord}
+        title="确认删除财富记录"
+        description="此操作无法撤销，确定要删除这条财富记录吗？"
+      />
     </div>
   );
 }

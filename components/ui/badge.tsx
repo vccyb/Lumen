@@ -20,6 +20,7 @@ const badgeVariants = cva(
         'in-progress': "border-transparent bg-lumen-accent-gold text-white shadow-sm",
         archived: "border-transparent bg-lumen-gray-inactive text-white shadow-sm",
         planning: "border-transparent bg-lumen-blue text-white shadow-sm",
+        dreaming: "border-transparent bg-gray-400 text-white shadow-sm",
       },
     },
     defaultVariants: {

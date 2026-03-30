@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select';
 import Progress from '@/components/ui/Progress';
 import { Pencil, Trash2, Loader2 } from 'lucide-react';
+import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
 
 const toNumber = (value: unknown): number => {
   const numeric = Number(value);
@@ -39,6 +40,8 @@ export default function GoalsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<LifeGoal | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [goalToDelete, setGoalToDelete] = useState<string | null>(null);
 
   // Load goals from API
   const loadGoals = async () => {
@@ -56,7 +59,7 @@ export default function GoalsPage() {
           targetDate: goal.target_date ? new Date(goal.target_date) : undefined,
           progress: toNumber(goal.progress),
           estimatedCost: toNumber(goal.estimated_cost),
-          milestones: Array.isArray(goal.milestones) ? goal.milestones : [],
+          milestones: [], // TODO: Load from goal_milestones junction table
           status: goal.status,
           priority: goal.priority ?? undefined,
           createdAt: new Date(goal.created_at),
@@ -164,14 +167,21 @@ export default function GoalsPage() {
   };
 
   const handleDeleteGoal = async (id: string) => {
-    if (confirm('确定要删除这个目标吗？')) {
-      try {
-        await lifeGoalAPI.delete(id);
-        await loadGoals();
-      } catch (err) {
-        console.error('Failed to delete goal:', err);
-        alert('删除失败，请重试');
-      }
+    setGoalToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteGoal = async () => {
+    if (!goalToDelete) return;
+
+    try {
+      await lifeGoalAPI.delete(goalToDelete);
+      await loadGoals();
+    } catch (err) {
+      console.error('Failed to delete goal:', err);
+      alert('删除失败，请重试');
+    } finally {
+      setGoalToDelete(null);
     }
   };
 
@@ -237,7 +247,7 @@ export default function GoalsPage() {
                       setEditingGoal(goal);
                       setShowAddModal(true);
                     }}
-                    className="h-8 w-8 bg-lumen-bg-system/80 backdrop-blur-sm hover:bg-white"
+                    className="h-8 w-8 bg-white/90 backdrop-blur-sm hover:bg-white text-lumen-text-secondary hover:text-lumen-text-primary"
                   >
                     <Pencil className="w-4 h-4" />
                   </Button>
@@ -245,7 +255,7 @@ export default function GoalsPage() {
                     variant="ghost"
                     size="icon"
                     onClick={() => handleDeleteGoal(goal.id)}
-                    className="h-8 w-8 bg-lumen-bg-system/80 backdrop-blur-sm hover:bg-red-50 hover:text-red-500"
+                    className="h-8 w-8 bg-white/90 backdrop-blur-sm hover:bg-red-50 text-lumen-text-secondary hover:text-red-500"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -258,7 +268,7 @@ export default function GoalsPage() {
                       {getCategoryLabel(goal.category)}
                     </span>
                     <Badge
-                      variant={goal.status === 'achieved' ? 'active' : goal.status === 'in-progress' ? 'in-progress' : goal.status === 'planning' ? 'planning' : 'secondary'}
+                      variant={goal.status === 'achieved' ? 'active' : goal.status === 'in-progress' ? 'in-progress' : goal.status === 'planning' ? 'planning' : 'dreaming'}
                       className="text-xs uppercase tracking-widest"
                     >
                       {getStatusLabel(goal.status)}
@@ -338,7 +348,7 @@ export default function GoalsPage() {
                 progress: Number(formData.get('progress') || 0),
                 estimatedCost: Number(formData.get('estimatedCost')),
                 milestones: [],
-                status: editingGoal?.status || 'dreaming',
+                status: formData.get('status') as LifeGoal['status'],
                 createdAt: editingGoal?.createdAt || new Date(),
                 updatedAt: new Date(),
               };
@@ -392,6 +402,21 @@ export default function GoalsPage() {
               </Select>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="status">目标状态</Label>
+              <Select name="status" required defaultValue={editingGoal?.status || 'dreaming'}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择状态" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dreaming">梦想中</SelectItem>
+                  <SelectItem value="planning">规划中</SelectItem>
+                  <SelectItem value="in-progress">进行中</SelectItem>
+                  <SelectItem value="achieved">已实现</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="targetDate">目标日期</Label>
@@ -439,6 +464,14 @@ export default function GoalsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDeleteGoal}
+        title="确认删除人生目标"
+        description="此操作无法撤销，确定要删除这个目标吗？"
+      />
     </div>
   );
 }

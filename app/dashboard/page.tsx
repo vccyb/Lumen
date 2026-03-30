@@ -49,7 +49,7 @@ export default function DashboardPage() {
           title: milestone.title,
           description: milestone.description,
           category: milestone.category,
-          emotionalYield: Array.isArray(milestone.emotional_yield) ? milestone.emotional_yield : [],
+          emotionalYield: [], // TODO: Add emotional_yield field to milestones table
           capitalDeployed: toNumber(milestone.capital_deployed),
           assetClass: milestone.asset_class,
           imageUrl: milestone.image_url ?? undefined,
@@ -87,7 +87,7 @@ export default function DashboardPage() {
           targetDate: goal.target_date ? new Date(goal.target_date) : undefined,
           progress: toNumber(goal.progress),
           estimatedCost: toNumber(goal.estimated_cost),
-          milestones: Array.isArray(goal.milestones) ? goal.milestones : [],
+          milestones: [], // TODO: Load from goal_milestones junction table
           status: goal.status,
           priority: goal.priority ?? undefined,
           createdAt: new Date(goal.created_at),

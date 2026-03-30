@@ -12,7 +12,7 @@ type ProjectUpdate = Database['public']['Tables']['projects']['Update'];
  */
 export class ProjectAPI extends BaseAPI {
   /**
-   * 获取所有项目
+   * 获取所有项目（包含链接）
    * @param options - 筛选选项
    * @returns 项目数组
    */
@@ -24,7 +24,7 @@ export class ProjectAPI extends BaseAPI {
   }): Promise<Project[]> {
     let query = this.supabase
       .from('projects')
-      .select('*')
+      .select('*, project_links(*)')
       .is('deleted_at', null);
 
     // Apply filters before ordering
@@ -80,15 +80,37 @@ export class ProjectAPI extends BaseAPI {
    * @param project - 项目数据
    * @returns 创建的项目
    */
-  async create(project: ProjectInsert): Promise<Project> {
+  async create(project: ProjectInsert & { links?: Array<{ label: string; url: string }> }): Promise<Project> {
+    // Extract links from project data
+    const { links, ...projectData } = project;
+
+    // Create project
     const { data, error } = await this.supabase
       .from('projects')
-      .insert(project)
+      .insert(projectData)
       .select()
       .single();
 
     if (error) {
       throw this.handleError('project', 'create', error);
+    }
+
+    // Create links if provided
+    if (links && links.length > 0 && data) {
+      const linkData = links.map(link => ({
+        project_id: data.id,
+        link_type: this.getLinkTypeFromLabel(link.label),
+        url: link.url,
+        title: link.label,
+      }));
+
+      const { error: linksError } = await this.supabase
+        .from('project_links')
+        .insert(linkData);
+
+      if (linksError) {
+        console.error('Failed to create project links:', linksError);
+      }
     }
 
     return data as Project;
@@ -100,16 +122,51 @@ export class ProjectAPI extends BaseAPI {
    * @param updates - 更新数据
    * @returns 更新后的项目
    */
-  async update(id: string, updates: ProjectUpdate): Promise<Project> {
+  async update(id: string, updates: ProjectUpdate & { links?: Array<{ label: string; url: string }> }): Promise<Project> {
+    // Extract links from updates
+    const { links, ...projectData } = updates;
+
+    // Update project
     const { data, error } = await this.supabase
       .from('projects')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...projectData, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
 
     if (error) {
       throw this.handleError('project', 'update', error);
+    }
+
+    // Update links if provided
+    if (links !== undefined) {
+      // Delete existing links
+      const { error: deleteError } = await this.supabase
+        .from('project_links')
+        .delete()
+        .eq('project_id', id);
+
+      if (deleteError) {
+        console.error('Failed to delete old project links:', deleteError);
+      }
+
+      // Create new links if any
+      if (links.length > 0) {
+        const linkData = links.map(link => ({
+          project_id: id,
+          link_type: this.getLinkTypeFromLabel(link.label),
+          url: link.url,
+          title: link.label,
+        }));
+
+        const { error: insertError } = await this.supabase
+          .from('project_links')
+          .insert(linkData);
+
+        if (insertError) {
+          console.error('Failed to create project links:', insertError);
+        }
+      }
     }
 
     return data as Project;
@@ -209,6 +266,19 @@ export class ProjectAPI extends BaseAPI {
    */
   async toggleFeatured(id: string, featured: boolean): Promise<Project> {
     return this.update(id, { featured });
+  }
+
+  /**
+   * 从链接标签推断链接类型
+   * @param label - 链接标签
+   * @returns 链接类型
+   */
+  private getLinkTypeFromLabel(label: string): 'github' | 'demo' | 'docs' | 'other' {
+    const lowerLabel = label.toLowerCase();
+    if (lowerLabel.includes('github') || lowerLabel === 'GitHub') return 'github';
+    if (lowerLabel.includes('demo') || lowerLabel === 'Live Demo') return 'demo';
+    if (lowerLabel.includes('doc') || lowerLabel === 'Documentation') return 'docs';
+    return 'other';
   }
 
   /**

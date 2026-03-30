@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { MilestoneCard } from '@/components/MilestoneCard';
+import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
 
 const toNumber = (value: unknown): number => {
   const numeric = Number(value);
@@ -38,6 +39,8 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [milestoneToDelete, setMilestoneToDelete] = useState<string | null>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -62,7 +65,7 @@ export default function HomePage() {
           title: milestone.title,
           description: milestone.description,
           category: milestone.category,
-          emotionalYield: Array.isArray(milestone.emotional_yield) ? milestone.emotional_yield : [],
+          emotionalYield: [], // TODO: Add emotional_yield field to milestones table
           capitalDeployed: toNumber(milestone.capital_deployed),
           assetClass: milestone.asset_class,
           imageUrl: milestone.image_url ?? undefined,
@@ -142,14 +145,21 @@ export default function HomePage() {
   };
 
   const handleDeleteMilestone = async (id: string) => {
-    if (confirm('确定要删除这条人生节点吗？')) {
-      try {
-        await milestoneAPI.delete(id);
-        await loadMilestones(); // Reload to get the updated list
-      } catch (err) {
-        console.error('Failed to delete milestone:', err);
-        alert('删除失败，请重试');
-      }
+    setMilestoneToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteMilestone = async () => {
+    if (!milestoneToDelete) return;
+
+    try {
+      await milestoneAPI.delete(milestoneToDelete);
+      await loadMilestones();
+    } catch (err) {
+      console.error('Failed to delete milestone:', err);
+      alert('删除失败，请重试');
+    } finally {
+      setMilestoneToDelete(null);
     }
   };
 
@@ -376,6 +386,14 @@ export default function HomePage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDeleteMilestone}
+        title="确认删除人生节点"
+        description="此操作无法撤销，确定要删除这条人生节点吗？"
+      />
     </div>
   );
 }
