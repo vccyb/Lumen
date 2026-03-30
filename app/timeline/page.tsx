@@ -68,8 +68,8 @@ export default function HomePage() {
           emotionalYield: [], // TODO: Add emotional_yield field to milestones table
           capitalDeployed: toNumber(milestone.capital_deployed),
           assetClass: milestone.asset_class,
-          imageUrl: milestone.image_url ?? undefined,
-          location: milestone.location ?? undefined,
+          imageUrl: milestone.image_url?.trim() || undefined,
+          location: milestone.location?.trim() || undefined,
           status: milestone.status ?? undefined,
           createdAt: new Date(milestone.created_at),
           updatedAt: new Date(milestone.updated_at),
@@ -106,8 +106,8 @@ export default function HomePage() {
         category: newMilestone.category,
         capital_deployed: newMilestone.capitalDeployed,
         asset_class: newMilestone.assetClass,
-        image_url: newMilestone.imageUrl,
-        location: newMilestone.location,
+        image_url: newMilestone.imageUrl?.trim(),
+        location: newMilestone.location?.trim(),
         status: newMilestone.status,
       };
 
@@ -129,8 +129,8 @@ export default function HomePage() {
         category: updatedMilestone.category,
         capital_deployed: updatedMilestone.capitalDeployed,
         asset_class: updatedMilestone.assetClass,
-        image_url: updatedMilestone.imageUrl,
-        location: updatedMilestone.location,
+        image_url: updatedMilestone.imageUrl?.trim(),
+        location: updatedMilestone.location?.trim(),
         status: updatedMilestone.status,
       };
 
@@ -245,8 +245,8 @@ export default function HomePage() {
                 emotionalYield: (formData.get('emotionalYield') as string).split('、').filter(Boolean),
                 capitalDeployed: Number(formData.get('capitalDeployed')),
                 assetClass: formData.get('assetClass') as Milestone['assetClass'],
-                imageUrl: formData.get('imageUrl') as string || undefined,
-                location: formData.get('location') as string || undefined,
+                imageUrl: (formData.get('imageUrl') as string || undefined)?.trim(),
+                location: (formData.get('location') as string || undefined)?.trim(),
                 status: formData.get('status') as Milestone['status'] || undefined,
                 createdAt: editingMilestone?.createdAt || new Date(),
                 updatedAt: new Date(),
