@@ -65,7 +65,9 @@ export default function HomePage() {
           title: milestone.title,
           description: milestone.description,
           category: milestone.category,
-          emotionalYield: [], // TODO: Add emotional_yield field to milestones table
+          emotionalYield: Array.isArray((milestone as any).emotional_yield)
+            ? (milestone as any).emotional_yield
+            : [],
           capitalDeployed: toNumber(milestone.capital_deployed),
           assetClass: milestone.asset_class,
           imageUrl: milestone.image_url?.trim() || undefined,
@@ -104,6 +106,7 @@ export default function HomePage() {
         title: newMilestone.title,
         description: newMilestone.description,
         category: newMilestone.category,
+        emotional_yield: newMilestone.emotionalYield,
         capital_deployed: newMilestone.capitalDeployed,
         asset_class: newMilestone.assetClass,
         image_url: newMilestone.imageUrl?.trim(),
@@ -127,6 +130,7 @@ export default function HomePage() {
         title: updatedMilestone.title,
         description: updatedMilestone.description,
         category: updatedMilestone.category,
+        emotional_yield: updatedMilestone.emotionalYield,
         capital_deployed: updatedMilestone.capitalDeployed,
         asset_class: updatedMilestone.assetClass,
         image_url: updatedMilestone.imageUrl?.trim(),

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatCurrency, formatDate, getWealthRecordWithTotal } from '@/lib/data';
+import { formatCurrency, formatDate, formatMonth, getWealthRecordWithTotal } from '@/lib/data';
+import { getNextMonthFirstDay, dateToMonthKey } from '@/lib/utils/date';
 import { WealthRecord } from '@/types';
 import { wealthRecordAPI } from '@/lib/api/wealth';
 import { Button } from '@/components/ui/button';
@@ -63,6 +64,17 @@ export default function WealthPage() {
   const [recordToDelete, setRecordToDelete] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [chartType, setChartType] = useState<'line' | 'area'>('line');
+
+  // 验证用户ID
+  const validateUserId = (user: any): string => {
+    if (!user) {
+      throw new Error('请先登录');
+    }
+    if (!user.id) {
+      throw new Error('用户身份验证失败，请重新登录');
+    }
+    return user.id;
+  };
 
   // Load wealth records from API
   const loadRecords = async () => {
@@ -129,98 +141,125 @@ export default function WealthPage() {
     })
     .sort((a, b) => b.date.getTime() - a.date.getTime());
 
-  // 添加月份记录
-  const handleAddMonth = async () => {
-    if (!user) {
-      alert('请先登录');
-      return;
-    }
-
-    const lastRecord = records[records.length - 1];
-    if (!lastRecord) return;
-
-    const newDate = new Date(lastRecord.date);
-    newDate.setMonth(newDate.getMonth() + 1);
-
-    const newRecordData = {
-      user_id: user.id,
-      date: newDate.toISOString().split('T')[0],
-      change_amount: 30000,
-      change_reason: '月度记录 - 待编辑',
-      breakdown: {
-        liquid: lastRecord.breakdown.liquid + 5000,
-        equities: lastRecord.breakdown.equities + 15000,
-        realEstate: lastRecord.breakdown.realEstate + 10000,
-        other: lastRecord.breakdown.other + 0,
-      },
-      total_assets: calculateTotalAssets({
-        liquid: lastRecord.breakdown.liquid + 5000,
-        equities: lastRecord.breakdown.equities + 15000,
-        realEstate: lastRecord.breakdown.realEstate + 10000,
-        other: lastRecord.breakdown.other + 0,
-      }),
-    };
-
+  // 添加月份记录 - 自动计算下个月，打开dialog
+  const handleAddMonth = () => {
     try {
-      const created = await wealthRecordAPI.create(newRecordData);
-      await loadRecords();
-      const breakdown = (created.breakdown ?? {}) as Record<string, unknown>;
-      const newRecord = {
-        id: created.id,
-        date: new Date(created.date),
-        changeAmount: toNumber(created.change_amount),
-        changeReason: created.change_reason,
+      const userId = validateUserId(user);
+
+      // 计算下个月的第一天
+      let nextMonthDate: Date;
+      if (records.length > 0) {
+        const lastRecord = records[records.length - 1];
+        nextMonthDate = getNextMonthFirstDay(lastRecord.date);
+      } else {
+        // 如果没有记录，使用当前月
+        nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      }
+
+      // 创建预填充的记录对象（用于表单默认值）
+      const newRecord: Omit<WealthRecord, 'id'> = {
+        date: nextMonthDate,
+        changeAmount: 0,
+        changeReason: '',
         breakdown: {
-          liquid: toNumber(breakdown.liquid),
-          equities: toNumber(breakdown.equities),
-          realEstate: toNumber(breakdown.realEstate ?? breakdown.real_estate),
-          other: toNumber(breakdown.other),
+          liquid: 0,
+          equities: 0,
+          realEstate: 0,
+          other: 0,
         },
-        createdAt: new Date(created.created_at),
-        updatedAt: new Date(created.updated_at),
-      } as WealthRecord;
-      setEditingRecord(newRecord);
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // 关键修复：新增时不要设置 editingRecord，或者在表单中判断是否有id
+      setEditingRecord({ ...newRecord, id: '' } as WealthRecord);
       setShowAddModal(true);
-    } catch (err) {
-      console.error('Failed to create wealth record:', err);
-      alert('创建失败，请重试');
+    } catch (error: any) {
+      alert(error.message);
     }
   };
 
   // 添加记录
   const handleAddRecord = async (newRecord: Omit<WealthRecord, 'id'>) => {
-    if (!user) {
-      alert('请先登录');
-      return;
-    }
-
     try {
+      // 验证用户ID
+      const userId = validateUserId(user);
+
+      console.log('Creating wealth record with user_id:', userId);
+      console.log('User object:', user);
+
+      // 检查月份是否已存在
+      const newMonthKey = dateToMonthKey(newRecord.date);
+      const existingRecord = records.find(r => {
+        return dateToMonthKey(r.date) === newMonthKey;
+      });
+
+      if (existingRecord) {
+        const monthDisplay = formatMonth(newRecord.date);
+        alert(`${monthDisplay}的记录已存在，请选择其他月份或编辑现有记录`);
+        return;
+      }
+
+      // 保存为每月1号
+      const recordDate = new Date(
+        newRecord.date.getFullYear(),
+        newRecord.date.getMonth(),
+        1
+      );
+
       const recordData = {
-        user_id: user.id,
-        date: newRecord.date.toISOString().split('T')[0],
+        user_id: userId,
+        date: recordDate.toISOString().split('T')[0],
         change_amount: newRecord.changeAmount,
         change_reason: newRecord.changeReason,
         total_assets: calculateTotalAssets(newRecord.breakdown),
         breakdown: {
           liquid: newRecord.breakdown.liquid,
           equities: newRecord.breakdown.equities,
-          realEstate: newRecord.breakdown.realEstate,
+          real_easte: newRecord.breakdown.realEstate,
           other: newRecord.breakdown.other,
         },
       };
 
+      console.log('Record data to be sent:', recordData);
+
       await wealthRecordAPI.create(recordData);
       await loadRecords();
       setShowAddModal(false);
-    } catch (err) {
-      console.error('Failed to create wealth record:', err);
-      alert('创建失败，请重试');
+    } catch (error: any) {
+      console.error('Failed to create wealth record:', error);
+
+      // 处理各种错误格式
+      const errorCode = error?.code || error?.originalError?.code;
+      const errorMessage = error?.message || error?.originalError?.message || '';
+
+      // 处理数据库UNIQUE约束错误
+      if (errorCode === '23505') {
+        const monthDisplay = formatMonth(newRecord.date);
+        alert(`${monthDisplay}的记录已存在，请选择其他月份或编辑现有记录`);
+        return;
+      }
+
+      // 处理其他错误，显示友好的提示
+      if (errorMessage.includes('duplicate key') || errorMessage.includes('unique constraint')) {
+        const monthDisplay = formatMonth(newRecord.date);
+        alert(`${monthDisplay}的记录已存在，请选择其他月份`);
+      } else if (errorMessage.includes('user_id')) {
+        alert('用户身份验证失败，请重新登录');
+      } else {
+        // 显示通用错误提示，不暴露技术细节
+        console.error('Error details:', error);
+        alert('创建失败，请检查网络连接或联系技术支持');
+      }
     }
   };
 
   // 更新记录
   const handleUpdateRecord = async (updatedRecord: WealthRecord) => {
     try {
+      console.log('Updating record with id:', updatedRecord.id);
+      console.log('Updated record data:', updatedRecord);
+
       const recordData = {
         date: updatedRecord.date.toISOString().split('T')[0],
         change_amount: updatedRecord.changeAmount,
@@ -234,13 +273,28 @@ export default function WealthPage() {
         },
       };
 
+      console.log('Sending update data:', recordData);
+
       await wealthRecordAPI.update(updatedRecord.id, recordData);
       await loadRecords();
       setEditingRecord(null);
       setShowAddModal(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update wealth record:', err);
-      alert('更新失败，请重试');
+
+      // 处理各种错误格式
+      const errorCode = err?.code || err?.originalError?.code;
+      const errorMessage = err?.message || err?.originalError?.message || '';
+
+      // 显示友好的错误提示
+      if (errorMessage.includes('uuid') || errorMessage.includes('invalid input syntax')) {
+        alert('记录ID无效，请重新打开编辑窗口');
+      } else if (errorCode === '23505') {
+        alert('该月份的记录已存在，无法修改月份');
+      } else {
+        console.error('Error details:', err);
+        alert('更新失败，请检查网络连接或重试');
+      }
     }
   };
 
@@ -256,9 +310,15 @@ export default function WealthPage() {
     try {
       await wealthRecordAPI.delete(recordToDelete);
       await loadRecords();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete wealth record:', err);
-      alert('删除失败，请重试');
+      const errorMessage = err?.message || err?.originalError?.message || '';
+
+      if (errorMessage.includes('record not found') || errorMessage.includes('404')) {
+        alert('记录不存在或已被删除');
+      } else {
+        alert('删除失败，请检查网络连接或重试');
+      }
     } finally {
       setRecordToDelete(null);
     }
@@ -423,7 +483,7 @@ export default function WealthPage() {
                       <div className="flex items-center gap-6">
                         {/* Date Badge */}
                         <div className="text-[10px] uppercase tracking-widest text-lumen-text-tertiary font-semibold px-3 py-1.5 bg-lumen-bg-system rounded-lg">
-                          {formatDate(record.date)}
+                          {formatMonth(record.date)}
                         </div>
 
                         {/* Change Badge */}
@@ -503,14 +563,20 @@ export default function WealthPage() {
         {showChartPanel && (
           <div className="border-l border-lumen-border-subtle bg-lumen-surface overflow-y-auto">
             <div className="p-8 sticky top-0">
-              {/* Chart Type Selector */}
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-lumen-text-primary">图表分析</h2>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setChartType('line')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      chartType === 'line'
+              {recordsWithTotal.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-lumen-text-secondary">暂无数据，请先添加财富记录</p>
+                </div>
+              ) : (
+                <>
+                  {/* Chart Type Selector */}
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-semibold text-lumen-text-primary">图表分析</h2>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setChartType('line')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          chartType === 'line'
                         ? 'bg-lumen-accent-gold text-white'
                         : 'bg-lumen-bg-system text-lumen-text-secondary hover:bg-lumen-border-subtle'
                     }`}
@@ -808,6 +874,8 @@ export default function WealthPage() {
                   </div>
                 </div>
               </div>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -823,8 +891,31 @@ export default function WealthPage() {
             onSubmit={(e) => {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
+
+              // 判断是编辑还是新增模式
+              const isEditMode = editingRecord && editingRecord.id;
+
+              let recordDate: Date;
+
+              if (isEditMode) {
+                // 编辑模式：使用现有记录的日期
+                recordDate = editingRecord.date;
+                console.log('Edit mode - using existing date:', recordDate);
+              } else {
+                // 新增模式：从表单获取月份
+                const monthValue = formData.get('date') as string;
+                if (!monthValue) {
+                  alert('请选择月份');
+                  return;
+                }
+
+                const [year, month] = monthValue.split('-').map(Number);
+                recordDate = new Date(year, month - 1, 1); // 转换为每月1号
+                console.log('Create mode - monthValue:', monthValue, 'date:', recordDate);
+              }
+
               const newRecord: Omit<WealthRecord, 'id'> = {
-                date: new Date(formData.get('date') as string),
+                date: recordDate,
                 changeAmount: Number(formData.get('changeAmount')),
                 changeReason: formData.get('changeReason') as string,
                 breakdown: {
@@ -837,23 +928,41 @@ export default function WealthPage() {
                 updatedAt: new Date(),
               };
 
-              if (editingRecord) {
+              console.log('New record from form:', newRecord);
+
+              if (isEditMode) {
+                console.log('Updating existing record with id:', editingRecord.id);
                 handleUpdateRecord({ ...newRecord, id: editingRecord.id });
               } else {
+                console.log('Creating new record');
                 handleAddRecord(newRecord);
               }
             }}
             className="space-y-4"
           >
             <div className="space-y-2">
-              <Label htmlFor="date">日期</Label>
-              <Input
-                id="date"
-                type="date"
-                name="date"
-                defaultValue={editingRecord ? editingRecord.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
-                required
-              />
+              <Label htmlFor="date">月份</Label>
+              {editingRecord && editingRecord.id ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="date"
+                    type="month"
+                    name="date"
+                    value={editingRecord.date.toISOString().slice(0, 7)}
+                    disabled
+                    className="bg-gray-50 cursor-not-allowed"
+                  />
+                  <span className="text-xs text-gray-500">编辑模式下不可修改月份</span>
+                </div>
+              ) : (
+                <Input
+                  id="date"
+                  type="month"
+                  name="date"
+                  defaultValue={editingRecord?.date ? editingRecord.date.toISOString().slice(0, 7) : new Date().toISOString().slice(0, 7)}
+                  required
+                />
+              )}
             </div>
 
             <div className="space-y-2">

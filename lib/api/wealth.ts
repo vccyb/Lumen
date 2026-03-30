@@ -101,6 +101,25 @@ export class WealthRecordAPI extends BaseAPI {
    * @returns 创建的财富记录
    */
   async create(record: WealthRecordInsert): Promise<WealthRecord> {
+    // 验证 user_id 存在
+    if (!record.user_id) {
+      throw new Error('用户ID不能为空，请先登录');
+    }
+
+    // 验证 user_id 格式（UUID）
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(record.user_id)) {
+      throw new Error('用户ID格式无效，请重新登录');
+    }
+
+    // 清理该月的软删除记录（作为额外保护）
+    await this.supabase
+      .from('wealth_records')
+      .delete()
+      .eq('user_id', record.user_id)
+      .eq('date', record.date)
+      .not('deleted_at', 'is', null);
+
     const { data, error } = await this.supabase
       .from('wealth_records')
       .insert(record)

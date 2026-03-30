@@ -37,6 +37,16 @@ export function formatDate(date: Date): string {
 }
 
 /**
+ * 格式化月份为中文格式（年月）
+ */
+export function formatMonth(date: Date): string {
+  return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+  }).format(date);
+}
+
+/**
  * 获取项目状态标签
  */
 export function getProjectStatusLabel(status: Project['status']): string {
